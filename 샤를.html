@@ -328,9 +328,11 @@
 
 function animateMolecules() {
   const molecules = document.querySelectorAll('.molecule');
-  const speed = 1.5; // 속도 증가
 
   function move() {
+    const temp = parseFloat(tempSlider.value);
+    const speed = 0.5 + temp / 20; // 온도에 따라 속도 증가
+
     molecules.forEach(molecule => {
       let left = parseFloat(molecule.style.left);
       let top = parseFloat(molecule.style.top);
