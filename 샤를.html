@@ -315,11 +315,39 @@
     }
 
     function createMolecules() {
-      moleculesContainer.innerHTML = '';
-      for (let i = 0; i < 30; i++) {
-        const mol = document.createElement('div');
-        mol.className = 'molecule';
-        mol.style.left = `${Math.random() * 80 + 10}%`;
+  moleculesContainer.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const mol = document.createElement('div');
+    mol.className = 'molecule';
+    mol.style.left = `${Math.random() * 80 + 10}%`;
+    mol.style.top = `${Math.random() * 60}%`;
+    moleculesContainer.appendChild(mol);
+  }
+  animateMolecules();
+}
+
+function animateMolecules() {
+  const molecules = document.querySelectorAll('.molecule');
+  const speed = 1.5; // 속도 증가
+
+  function move() {
+    molecules.forEach(molecule => {
+      let left = parseFloat(molecule.style.left);
+      let top = parseFloat(molecule.style.top);
+
+      left += (Math.random() - 0.5) * speed;
+      top += (Math.random() - 0.5) * speed;
+
+      left = Math.max(10, Math.min(90, left));
+      top = Math.max(0, Math.min(60, top));
+
+      molecule.style.left = `${left}%`;
+      molecule.style.top = `${top}%`;
+    });
+    requestAnimationFrame(move);
+  }
+  move();
+}%`;
         mol.style.top = `${Math.random() * 60}%`;
         moleculesContainer.appendChild(mol);
       }
