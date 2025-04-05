@@ -241,7 +241,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-  <script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
     const tempSlider = document.getElementById('temperature-slider');
     const tempDisplay = document.getElementById('temperature-display');
     const volSlider = document.getElementById('initial-volume-slider');
@@ -409,7 +410,8 @@ function animateMolecules() {
     }
 
     runBtn.addEventListener('click', runExperiment);
-    resetBtn.addEventListener('click', resetExperiment);
+  resetBtn.addEventListener('click', resetExperiment);
+});
   </script>
 </body>
 </html>
