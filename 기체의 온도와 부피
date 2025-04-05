@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>온도와 부피 관계 시뮬레이션</title>
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    .content-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: center;
+    }
+    .experiment-container {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .data-container {
+      flex: 1;
+      min-width: 300px;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #444;
+    }
+    .apparatus {
+      position: relative;
+      width: 300px;
+      height: 400px;
+      margin-bottom: 20px;
+    }
+    .beaker {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 240px;
+      background-color: rgba(173, 216, 230, 0.4);
+      border: 2px solid #444;
+      border-top: none;
+      border-radius: 0 0 20px 20px;
+    }
+    .water {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80%;
+      background-color: rgba(135, 206, 235, 0.6);
+      border-radius: 0 0 18px 18px;
+    }
+    .syringe {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 300px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 2px solid #666;
+      border-radius: 5px 5px 0 0;
+      z-index: 10;
+    }
+    .syringe-plunger {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #ddd;
+      border-top: 2px solid #666;
+      transition: height 0.5s;
+      z-index: 11;
+    }
+    .syringe-tube {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 40px;
+      background-color: #ddd;
+      border: 1px solid #666;
+      z-index: 9;
+      border-radius: 0 0 5px 5px;
+    }
+    .volume-display {
+      position: absolute;
+      top: 10px;
+      right: -70px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 5px 10px;
+      border: 1px solid #666;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      z-index: 15;
+    }
+    .temperature-control {
+      margin: 20px 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slider-container {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    #temperature-slider {
+      flex: 1;
+      height: 15px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, blue, red);
+      outline: none;
+      border-radius: 15px;
+    }
+    #temperature-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: white;
+      border: 2px solid #888;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 20px;
+    }
+    .molecules {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 8;
+    }
+    .molecule {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: #3a86ff;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>온도와 부피 관계 시뮬레이션</h1>
+    
+    <div class="content-wrapper">
+      <div class="experiment-container">
+        <h2>실험 장치</h2>
+        <div class="apparatus">
+          <div class="beaker">
+            <div class="water"></div>
+          </div>
+          <div class="syringe">
+            <div class="molecules" id="molecules-container"></div>
+            <div class="syringe-plunger" id="plunger" style="height: 75%;"></div>
+            <div class="syringe-tube"></div>
+            <div class="volume-display" id="volume-display">75.0 mL</div>
+          </div>
+        </div>
+        
+        <div class="temperature-control">
+          <h2>온도 조절</h2>
+          <div class="slider-container">
+            <input type="range" min="0" max="200" value="20" class="slider" id="temperature-slider">
+            <span class="temperature-value" id="temperature-display">20°C</span>
+          </div>
+        </div>
+        
+        <button id="run-experiment">실험 실행</button>
+        <button id="reset-experiment">초기화</button>
+      </div>
+      
+      <div class="data-container">
+        <h2>실험 데이터</h2>
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>물의 온도(°C)</th>
+              <th>주사기 속 공기의 부피(mL)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>20</td>
+              <td>75.0</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h2>온도-부피 그래프</h2>
+        <div class="chart-container">
+          <canvas id="volume-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <script>
+    // DOM 요소
+    const temperatureSlider = document.getElementById('temperature-slider');
+    const temperatureDisplay = document.getElementById('temperature-display');
+    const runExperimentBtn = document.getElementById('run-experiment');
+    const resetExperimentBtn = document.getElementById('reset-experiment');
+    const dataTable = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+    const moleculesContainer = document.getElementById('molecules-container');
+    const volumeDisplay = document.getElementById('volume-display');
+    const plunger = document.getElementById('plunger');
+    
+    // 데이터 저장
+    let experimentData = [{ temperature: 20, volume: 75.0 }];
+    
+    // 온도에 따른 부피 계산 (샤를의 법칙: V ∝ T)
+    function calculateVolume(temperature) {
+      // 20°C를 기준으로 샤를의 법칙 적용 (절대온도로 변환)
+      const initialVolume = 75.0;
+      const initialTemp = 20 + 273.15; // K
+      const currentTemp = temperature + 273.15; // K
+      
+      const newVolume = initialVolume * (currentTemp / initialTemp);
+      return Math.round(newVolume * 10) / 10; // 소수점 첫째자리까지 표시
+    }
+    
+    // 슬라이더 이벤트
+    temperatureSlider.addEventListener('input', () => {
+      const temperature = temperatureSlider.value;
+      temperatureDisplay.textContent = `${temperature}°C`;
+    });
+    
+    // 주사기 피스톤 업데이트
+    function updateSyringePlunger(volume) {
+      // 부피가 커질수록 피스톤이 위로 올라감 (높이가 줄어듦)
+      const maxVolume = 150; // 최대 부피
+      const plungerHeight = Math.max(0, 100 - ((volume / maxVolume) * 100));
+      plunger.style.height = `${plungerHeight}%`;
+      volumeDisplay.textContent = `${volume} mL`;
+    }
+    
+    // 데이터 테이블에 추가
+    function addDataToTable(temperature, volume) {
+      const existingRow = Array.from(dataTable.rows).find(row => 
+        parseInt(row.cells[0].textContent) === temperature
+      );
+      
+      if (existingRow) {
+        existingRow.cells[1].textContent = volume;
+      } else {
+        const newRow = dataTable.insertRow();
+        newRow.insertCell(0).textContent = temperature;
+        newRow.insertCell(1).textContent = volume;
+        
+        // 데이터 저장
+        experimentData.push({ temperature, volume });
+      }
+    }
+    
+    // 차트 업데이트
+    function updateChart() {
+      // 온도 순으로 정렬
+      experimentData.sort((a, b) => a.temperature - b.temperature);
+      
+      const temperatures = experimentData.map(item => item.temperature);
+      const volumes = experimentData.map(item => item.volume);
+      
+      chart.data.labels = temperatures;
+      chart.data.datasets[0].data = volumes;
+      chart.update();
+    }
+    
+    // 차트 설정
+    const ctx = document.getElementById('volume-chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [20],
+        datasets: [{
+          label: '기체 부피 (mL)',
+          data: [75.0],
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+          pointBorderColor: '#fff',
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: '온도 (°C)'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: '부피 (mL)'
+            },
+            min: 0,
+            suggestedMax: 150
+          }
+        }
+      }
+    });
+
+    // 분자 생성
+    function createMolecules() {
+      moleculesContainer.innerHTML = '';
+      const numberOfMolecules = 30;
+      const plungerHeight = parseFloat(plunger.style.height);
+      const availableHeight = 100 - plungerHeight;
+      
+      for (let i = 0; i < numberOfMolecules; i++) {
+        const molecule = document.createElement('div');
+        molecule.className = 'molecule';
+        molecule.style.left = `${Math.random() * 80 + 10}%`;
+        molecule.style.top = `${Math.random() * availableHeight}%`;
+        moleculesContainer.appendChild(molecule);
+      }
+    }
+
+    // 분자 움직임 업데이트
+    function updateMoleculeMovement(temperature) {
+      const molecules = document.querySelectorAll('.molecule');
+      const plungerHeight = parseFloat(plunger.style.height);
+      const availableHeight = 100 - plungerHeight;
+      const speed = 0.5 + (temperature / 20); // 온도에 따른 분자 움직임 속도
+
+      molecules.forEach(molecule => {
+        const currentLeft = parseFloat(molecule.style.left);
+        const currentTop = parseFloat(molecule.style.top);
+
+        let newLeft = currentLeft + (Math.random() - 0.5) * speed;
+        let newTop = currentTop + (Math.random() - 0.5) * speed;
+
+        if (newLeft < 10) newLeft = 10;
+        if (newLeft > 90) newLeft = 90;
+        if (newTop < 0) newTop = 0;
+        if (newTop > availableHeight) newTop = availableHeight;
+
+        molecule.style.left = `${newLeft}%`;
+        molecule.style.top = `${newTop}%`;
+      });
+    }
+
+    // 분자 움직임 애니메이션
+    let animationId;
+    function startMoleculeAnimation(temperature) {
+      if (animationId) cancelAnimationFrame(animationId);
+
+      function animate() {
+        updateMoleculeMovement(temperature);
+        animationId = requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+
+    // 실험 실행
+    function runExperiment() {
+      const temperature = parseInt(temperatureSlider.value);
+      const volume = calculateVolume(temperature);
+
+      // 온도에 따른 물 색상 변경
+      const waterElement = document.querySelector('.water');
+      const blueColor = Math.max(0, 255 - temperature);
+      const redColor = Math.min(255, temperature);
+      waterElement.style.backgroundColor = `rgba(${redColor}, 100, ${blueColor}, 0.6)`;
+
+      updateSyringePlunger(volume);
+      addDataToTable(temperature, volume);
+      updateChart();
+      createMolecules();
+      startMoleculeAnimation(temperature);
+    }
+
+    runExperimentBtn.addEventListener('click', runExperiment);
+
+    resetExperimentBtn.addEventListener('click', () => {
+      // 실험 초기화
+      experimentData = [{ temperature: 20, volume: 75.0 }];
+      dataTable.innerHTML = '';
+      const newRow = dataTable.insertRow();
+      newRow.insertCell(0).textContent = '20';
+      newRow.insertCell(1).textContent = '75.0';
+
+      chart.data.labels = [20];
+      chart.data.datasets[0].data = [75.0];
+      chart.update();
+
+      temperatureSlider.value = 20;
+      temperatureDisplay.textContent = '20°C';
+      volumeDisplay.textContent = '75.0 mL';
+      plunger.style.height = '75%';
+      
+      // 물 색상 초기화
+      const waterElement = document.querySelector('.water');
+      waterElement.style.backgroundColor = 'rgba(135, 206, 235, 0.6)';
+      
+      // 분자 애니메이션 정지
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      // 분자 초기화
+      moleculesContainer.innerHTML = '';
+    });
+    
+    // 초기 분자 생성
+    createMolecules();
+  </script>
+</body>
+</html>
