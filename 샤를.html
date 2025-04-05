@@ -339,7 +339,9 @@
           left += (Math.random() - 0.5) * speed;
           top += (Math.random() - 0.5) * speed;
           left = Math.max(10, Math.min(90, left));
-          top = Math.max(0, Math.min(60, top));
+          const plungerHeight = parseFloat(plunger.style.height);
+          const availableHeight = 100 - plungerHeight;
+          top = Math.max(0, Math.min(availableHeight, top));
           molecule.style.left = `${left}%`;
           molecule.style.top = `${top}%`;
         });
