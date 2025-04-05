@@ -306,7 +306,8 @@ window.addEventListener('DOMContentLoaded', () => {
           x: { title: { display: true, text: '온도 (°C)' } },
           y: { title: { display: true, text: '부피 (mL)' }, min: 0, max: 200 }
         }
-      });
+      }
+    });
 
     function updateChart() {
       chart.data.labels = experimentData.map((d, i) => `${d.temperature}°C (${i + 1}차)`);
