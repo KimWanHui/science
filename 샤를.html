@@ -344,14 +344,12 @@ function createMolecules() {
   }
 }
 
-let animationStarted = false;
+let animationId;
 function animateMolecules() {
-  if (animationStarted) return;
-  animationStarted = true;
-
+  cancelAnimationFrame(animationId);
   function move() {
     const temp = parseFloat(tempSlider.value);
-    const speedMultiplier = 0.5 + temp / 50;
+    const speedMultiplier = 1 + temp / 40;
     const syringeHeightPx = 300;
     const plungerHeight = parseFloat(plunger.style.height);
     const availableHeight = 100 - plungerHeight;
@@ -375,9 +373,8 @@ function animateMolecules() {
       molecule.style.top = `${top}px`;
     });
 
-    requestAnimationFrame(move);
+    animationId = requestAnimationFrame(move);
   }
-
   move();
 }
 
