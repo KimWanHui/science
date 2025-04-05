@@ -332,7 +332,15 @@ function createMolecules() {
     mol.className = 'molecule';
     const left = Math.random() * 80 + 10;
     const top = Math.random() * maxTopPx;
-    mol.style.left = `${left}
+    mol.style.left = `${left}%`;
+    mol.style.top = `${top}px`;
+    moleculesContainer.appendChild(mol);
+    molecules.push(mol);
+
+    const vx = (Math.random() - 0.5) * 2;
+    const vy = (Math.random() - 0.5) * 2;
+    moleculeStates.push({ vx, vy });
+  }
 }
     }
 
