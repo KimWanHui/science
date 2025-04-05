@@ -315,16 +315,34 @@
     }
 
     let molecules = [];
+let moleculeStates = [];
 
 function createMolecules() {
   moleculesContainer.innerHTML = '';
   molecules = [];
+  moleculeStates = [];
+
   const plungerHeight = parseFloat(plunger.style.height);
   const usableHeightPercent = 100 - plungerHeight;
+  const syringeHeightPx = 300;
+  const maxTopPx = (usableHeightPercent / 100) * syringeHeightPx;
+
   for (let i = 0; i < 30; i++) {
     const mol = document.createElement('div');
     mol.className = 'molecule';
-    mol.style.left = `${Math.random() * 80 + 10}%`;
+    const left = Math.random() * 80 + 10;
+    const top = Math.random() * maxTopPx;
+    mol.style.left = `${left}%`;
+    mol.style.top = `${top}px`;
+    moleculesContainer.appendChild(mol);
+    molecules.push(mol);
+
+    // 병진운동을 위한 속도 벡터 초기화
+    const vx = (Math.random() - 0.5) * 2;
+    const vy = (Math.random() - 0.5) * 2;
+    moleculeStates.push({ vx, vy });
+  }
+}%`;
     mol.style.top = `${Math.random() * usableHeightPercent}%`;
     moleculesContainer.appendChild(mol);
     molecules.push(mol);
@@ -339,24 +357,30 @@ function animateMolecules() {
 
   function move() {
     const temp = parseFloat(tempSlider.value);
-    const speed = 0.3 + temp / 40;
-    molecules.forEach(molecule => {
+    const speedMultiplier = 0.5 + temp / 50;
+    const syringeHeightPx = 300;
+    const plungerHeight = parseFloat(plunger.style.height);
+    const availableHeight = 100 - plungerHeight;
+    const maxTopPx = (availableHeight / 100) * syringeHeightPx;
+
+    molecules.forEach((molecule, i) => {
+      const state = moleculeStates[i];
       let left = parseFloat(molecule.style.left);
       let top = parseFloat(molecule.style.top);
 
-      left += (Math.random() - 0.5) * speed;
-      top += (Math.random() - 0.5) * speed;
+      left += state.vx * speedMultiplier;
+      top += state.vy * speedMultiplier;
+
+      if (left < 10 || left > 90) state.vx *= -1;
+      if (top < 0 || top > maxTopPx) state.vy *= -1;
 
       left = Math.max(10, Math.min(90, left));
-      const plungerHeight = parseFloat(plunger.style.height);
-      const availableHeight = 100 - plungerHeight;
-      const syringeHeightPx = 300;
-      const maxTopPx = (availableHeight / 100) * syringeHeightPx;
       top = Math.max(0, Math.min(maxTopPx, top));
 
       molecule.style.left = `${left}%`;
       molecule.style.top = `${top}px`;
     });
+
     requestAnimationFrame(move);
   }
 
