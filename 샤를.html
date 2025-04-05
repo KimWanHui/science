@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>온도와 부피 관계 시뮬레이션</title>
   <style>
     body {
@@ -21,10 +21,9 @@
       align-items: center;
       max-width: 1200px;
       width: 100%;
-      margin: 0 auto;
       background-color: white;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       padding: 20px;
     }
     .content-wrapper {
@@ -45,14 +44,6 @@
       flex: 1;
       min-width: 300px;
       padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 20px;
-    }
-    h2 {
-      color: #444;
     }
     .apparatus {
       position: relative;
@@ -125,7 +116,7 @@
       border-radius: 5px;
       font-size: 14px;
       font-weight: bold;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
       z-index: 15;
     }
     .temperature-control {
@@ -142,17 +133,15 @@
       justify-content: center;
       margin: 10px 0;
     }
-    #temperature-slider, #initial-volume-slider {
+    input[type=range] {
       flex: 1;
       height: 15px;
-      -webkit-appearance: none;
       appearance: none;
       background: linear-gradient(to right, blue, red);
       outline: none;
       border-radius: 15px;
     }
-    #temperature-slider::-webkit-slider-thumb, #initial-volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
+    input[type=range]::-webkit-slider-thumb {
       appearance: none;
       width: 25px;
       height: 25px;
@@ -160,7 +149,6 @@
       background: white;
       border: 2px solid #888;
       cursor: pointer;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     }
     button {
       padding: 10px 20px;
@@ -171,7 +159,6 @@
       cursor: pointer;
       font-size: 16px;
       margin: 10px;
-      transition: background-color 0.3s;
     }
     button:hover {
       background-color: #45a049;
@@ -179,8 +166,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
     }
     th, td {
       border: 1px solid #ddd;
@@ -189,7 +175,6 @@
     }
     th {
       background-color: #f2f2f2;
-      color: #333;
     }
     .chart-container {
       position: relative;
@@ -210,11 +195,173 @@
       height: 8px;
       background-color: #3a86ff;
       border-radius: 50%;
-      transition: all 0.3s;
     }
   </style>
 </head>
 <body>
-  <!-- 생략: 본문 HTML과 스크립트는 기존과 동일하며, initial-volume-slider, initialVolume 변수 및 관련 로직이 추가되어야 합니다 -->
+  <div class="container">
+    <h1>온도와 부피 관계 시뮬레이션</h1>
+    <div class="content-wrapper">
+      <div class="experiment-container">
+        <div class="apparatus">
+          <div class="beaker"><div class="water"></div></div>
+          <div class="syringe">
+            <div class="molecules" id="molecules-container"></div>
+            <div class="syringe-plunger" id="plunger" style="height: 75%;"></div>
+            <div class="syringe-tube"></div>
+            <div class="volume-display" id="volume-display">75.0 mL</div>
+          </div>
+        </div>
+        <div class="temperature-control">
+          <h2>온도 조절</h2>
+          <div class="slider-container">
+            <input type="range" min="0" max="200" value="20" id="temperature-slider">
+            <span id="temperature-display">20°C</span>
+          </div>
+          <h2>초기 부피 조절</h2>
+          <div class="slider-container">
+            <input type="range" min="50" max="150" value="75" id="initial-volume-slider">
+            <span id="initial-volume-display">75 mL</span>
+          </div>
+        </div>
+        <button id="run-experiment">실험 실행</button>
+        <button id="reset-experiment">초기화</button>
+      </div>
+      <div class="data-container">
+        <h2>실험 데이터</h2>
+        <table id="data-table">
+          <thead>
+            <tr><th>온도 (°C)</th><th>부피 (mL)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>20</td><td>75.0</td></tr>
+          </tbody>
+        </table>
+        <div class="chart-container">
+          <canvas id="volume-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const tempSlider = document.getElementById('temperature-slider');
+    const tempDisplay = document.getElementById('temperature-display');
+    const volSlider = document.getElementById('initial-volume-slider');
+    const volDisplay = document.getElementById('initial-volume-display');
+    const runBtn = document.getElementById('run-experiment');
+    const resetBtn = document.getElementById('reset-experiment');
+    const plunger = document.getElementById('plunger');
+    const volumeDisplay = document.getElementById('volume-display');
+    const dataTable = document.getElementById('data-table').querySelector('tbody');
+    const moleculesContainer = document.getElementById('molecules-container');
+
+    let initialVolume = parseFloat(volSlider.value);
+    let experimentData = [{ temperature: 20, volume: 75.0 }];
+
+    volSlider.addEventListener('input', () => {
+      initialVolume = parseFloat(volSlider.value);
+      volDisplay.textContent = `${initialVolume} mL`;
+    });
+
+    tempSlider.addEventListener('input', () => {
+      tempDisplay.textContent = `${tempSlider.value}°C`;
+    });
+
+    function calculateVolume(temp) {
+      const T0 = 20 + 273.15;
+      const T = parseFloat(temp) + 273.15;
+      return Math.round(initialVolume * (T / T0) * 10) / 10;
+    }
+
+    function updateSyringe(volume) {
+      const maxVol = 150;
+      const height = Math.max(0, 100 - (volume / maxVol) * 100);
+      plunger.style.height = `${height}%`;
+      volumeDisplay.textContent = `${volume} mL`;
+    }
+
+    function addData(temperature, volume) {
+      const row = Array.from(dataTable.rows).find(r => +r.cells[0].textContent === temperature);
+      const data = experimentData.find(d => d.temperature === temperature);
+      if (row) {
+        row.cells[1].textContent = volume;
+        if (data) data.volume = volume;
+      } else {
+        const newRow = dataTable.insertRow();
+        newRow.insertCell(0).textContent = temperature;
+        newRow.insertCell(1).textContent = volume;
+        experimentData.push({ temperature, volume });
+      }
+    }
+
+    const ctx = document.getElementById('volume-chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [20],
+        datasets: [{
+          label: '기체 부피 (mL)',
+          data: [75.0],
+          borderColor: 'blue',
+          fill: false
+        }]
+      },
+      options: {
+        scales: {
+          x: { title: { display: true, text: '온도 (°C)' }},
+          y: { title: { display: true, text: '부피 (mL)' }, min: 0, max: 200 }
+        }
+      }
+    });
+
+    function updateChart() {
+      experimentData.sort((a, b) => a.temperature - b.temperature);
+      chart.data.labels = experimentData.map(d => d.temperature);
+      chart.data.datasets[0].data = experimentData.map(d => d.volume);
+      chart.update();
+    }
+
+    function createMolecules() {
+      moleculesContainer.innerHTML = '';
+      for (let i = 0; i < 30; i++) {
+        const mol = document.createElement('div');
+        mol.className = 'molecule';
+        mol.style.left = `${Math.random() * 80 + 10}%`;
+        mol.style.top = `${Math.random() * 60}%`;
+        moleculesContainer.appendChild(mol);
+      }
+    }
+
+    function runExperiment() {
+      const temp = +tempSlider.value;
+      const volume = calculateVolume(temp);
+      updateSyringe(volume);
+      addData(temp, volume);
+      updateChart();
+      createMolecules();
+    }
+
+    function resetExperiment() {
+      tempSlider.value = 20;
+      tempDisplay.textContent = '20°C';
+      volSlider.value = 75;
+      volDisplay.textContent = '75 mL';
+      initialVolume = 75;
+
+      volumeDisplay.textContent = '75.0 mL';
+      plunger.style.height = '75%';
+      moleculesContainer.innerHTML = '';
+      experimentData = [{ temperature: 20, volume: 75.0 }];
+      dataTable.innerHTML = '<tr><td>20</td><td>75.0</td></tr>';
+      chart.data.labels = [20];
+      chart.data.datasets[0].data = [75.0];
+      chart.update();
+    }
+
+    runBtn.addEventListener('click', runExperiment);
+    resetBtn.addEventListener('click', resetExperiment);
+  </script>
 </body>
 </html>
