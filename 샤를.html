@@ -316,11 +316,13 @@
 
     function createMolecules() {
       moleculesContainer.innerHTML = '';
+      const plungerHeight = parseFloat(plunger.style.height); // 0~100%
+      const usableHeightPercent = 100 - plungerHeight; // 높이에 비례해서 분자 배치
       for (let i = 0; i < 30; i++) {
         const mol = document.createElement('div');
         mol.className = 'molecule';
         mol.style.left = `${Math.random() * 80 + 10}%`;
-        mol.style.top = `${Math.random() * 60}%`;
+        mol.style.top = `${Math.random() * usableHeightPercent}%`;
         moleculesContainer.appendChild(mol);
       }
       animateMolecules();
