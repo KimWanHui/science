@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>온도와 부피 관계 시뮬레이션</title>
   <style>
     body {
@@ -230,12 +230,8 @@
       <div class="data-container">
         <h2>실험 데이터</h2>
         <table id="data-table">
-          <thead>
-            <tr><th>온도 (°C)</th><th>부피 (mL)</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>20</td><td>75.0</td></tr>
-          </tbody>
+          <thead><tr><th>온도 (°C)</th><th>부피 (mL)</th></tr></thead>
+          <tbody><tr><td>20</td><td>75.0</td></tr></tbody>
         </table>
         <div class="chart-container">
           <canvas id="volume-chart"></canvas>
@@ -310,7 +306,7 @@
       },
       options: {
         scales: {
-          x: { title: { display: true, text: '온도 (°C)' }},
+          x: { title: { display: true, text: '온도 (°C)' } },
           y: { title: { display: true, text: '부피 (mL)' }, min: 0, max: 200 }
         }
       }
@@ -349,7 +345,6 @@
       volSlider.value = 75;
       volDisplay.textContent = '75 mL';
       initialVolume = 75;
-
       volumeDisplay.textContent = '75.0 mL';
       plunger.style.height = '75%';
       moleculesContainer.innerHTML = '';
