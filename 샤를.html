@@ -231,7 +231,7 @@
         <h2>실험 데이터</h2>
         <table id="data-table">
           <thead><tr><th>온도 (°C)</th><th>부피 (mL)</th></tr></thead>
-          <tbody><tr><td>20</td><td>75.0</td></tr></tbody>
+          <tbody><tr><td>20</td><td>75.0 (시행 1)</td></tr></tbody>
         </table>
         <div class="chart-container">
           <canvas id="volume-chart"></canvas>
@@ -255,6 +255,7 @@
 
     let initialVolume = parseFloat(volSlider.value);
     let experimentData = [{ temperature: 20, volume: 75.0 }];
+    let trialCount = 2;
 
     volSlider.addEventListener('input', () => {
       initialVolume = parseFloat(volSlider.value);
@@ -279,29 +280,24 @@
     }
 
     function addData(temperature, volume) {
-      const row = Array.from(dataTable.rows).find(r => +r.cells[0].textContent === temperature);
-      const data = experimentData.find(d => d.temperature === temperature);
-      if (row) {
-        row.cells[1].textContent = volume;
-        if (data) data.volume = volume;
-      } else {
-        const newRow = dataTable.insertRow();
-        newRow.insertCell(0).textContent = temperature;
-        newRow.insertCell(1).textContent = volume;
-        experimentData.push({ temperature, volume });
-      }
+      const newRow = dataTable.insertRow();
+      newRow.insertCell(0).textContent = temperature;
+      newRow.insertCell(1).textContent = `${volume} (시행 ${trialCount})`;
+      experimentData.push({ temperature, volume });
+      trialCount++;
     }
 
     const ctx = document.getElementById('volume-chart').getContext('2d');
     const chart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: [20],
+        labels: ["20°C (1차)"],
         datasets: [{
           label: '기체 부피 (mL)',
           data: [75.0],
           borderColor: 'blue',
-          fill: false
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          fill: true
         }]
       },
       options: {
@@ -313,8 +309,7 @@
     });
 
     function updateChart() {
-      experimentData.sort((a, b) => a.temperature - b.temperature);
-      chart.data.labels = experimentData.map(d => d.temperature);
+      chart.data.labels = experimentData.map((d, i) => `${d.temperature}°C (${i + 1}차)`);
       chart.data.datasets[0].data = experimentData.map(d => d.volume);
       chart.update();
     }
@@ -348,9 +343,10 @@
       volumeDisplay.textContent = '75.0 mL';
       plunger.style.height = '75%';
       moleculesContainer.innerHTML = '';
+      trialCount = 2;
       experimentData = [{ temperature: 20, volume: 75.0 }];
-      dataTable.innerHTML = '<tr><td>20</td><td>75.0</td></tr>';
-      chart.data.labels = [20];
+      dataTable.innerHTML = '<tr><td>20</td><td>75.0 (시행 1)</td></tr>';
+      chart.data.labels = ["20°C (1차)"];
       chart.data.datasets[0].data = [75.0];
       chart.update();
     }
