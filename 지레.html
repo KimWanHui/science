@@ -135,14 +135,15 @@
             z-index: 8;
         }
         
-        .weight-string {
-            width: 2px;
-            background-color: #000;
-            height: 80px;
-            margin: 0;
-            padding: 0;
-            transform-origin: top center; /* ✅ 요게 핵심 */
-        }
+.weight-string {
+    width: 2px;
+    background-color: #000;
+    height: 80px;
+    margin: 0;
+    padding: 0;
+    transform-origin: top center; /* ✅ 추가 */
+    transition: transform 0.5s ease, height 0.5s ease; /* ✅ 부드러운 길이 변화 */
+}
         
         .weight {
             width: 30px;
@@ -1000,6 +1001,17 @@ const rightString = document.getElementById('right-string');
 
 leftString.style.transform = `rotate(${rotationAngle}deg)`;
 rightString.style.transform = `rotate(${rotationAngle}deg)`;
+
+            // 실 길이 자동 조절 (cosθ에 따라 보정)
+const baseStringLength = 80; // 실의 기본 길이
+const radian = rotationAngle * Math.PI / 180;
+const adjustedLength = baseStringLength / Math.cos(radian);
+
+// 너무 길어지지 않도록 제한 (최대 150px)
+const clampedLength = Math.min(adjustedLength, 150);
+
+leftString.style.height = `${clampedLength}px`;
+rightString.style.height = `${clampedLength}px`;
 
         }
         
