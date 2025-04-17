@@ -758,8 +758,14 @@ function updateWeightPositions() {
     rightWeightContainer.style.top = `${leverY}px`;
 
     // 실 길이: 추 길이와 정확히 맞춤
-    leftString.style.height = `${leftHeight}px`;
-    rightString.style.height = `${rightHeight}px`;
+leftString.style.height = `${leftHeight}px`;
+rightString.style.height = `${rightHeight}px`;
+
+leftString.style.position = 'absolute';
+rightString.style.position = 'absolute';
+
+leftString.style.top = `${leverY}px`;
+rightString.style.top = `${leverY}px`;
 
     // 추 크기 및 텍스트
     leftWeight.style.width = '30px';
