@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>돌림힘과 지레의 평형 조건 시뮬레이션</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #e74c3c;
+            --accent: #f1c40f;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --green: #2ecc71;
+            --blue: #3498db;
+            --red: #e74c3c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: var(--dark);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .info-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .info-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+        
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            height: 500px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .lever-container {
+            width: 100%;
+            height: 65%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .lever {
+            width: 90%;
+            height: 10px;
+            background-color: #8b4513;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: transform 0.5s ease;
+            z-index: 5;
+            border-radius: 5px;
+        }
+        
+        .fulcrum {
+            width: 20px;
+            height: 20px;
+            background-color: var(--dark);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+        }
+        
+        .weight-container {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            top: 50%;
+            transform-origin: top center;
+            transition: transform 0.5s ease;
+            z-index: 8;
+        }
+        
+        .weight-string {
+            width: 2px;
+            background-color: #000;
+            height: 80px;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .weight {
+            width: 30px;
+            height: 50px;
+            background-color: #666;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            cursor: move;
+            border-radius: 5px 5px 0 0;
+            margin-top: 0;
+        }
+        
+        .moment-arm {
+            position: absolute;
+            height: 4px;
+            top: 50%;
+            background-color: rgba(52, 152, 219, 0.8);
+            z-index: 15;
+            transform: translateY(-50%);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .control-item {
+            margin-bottom: 15px;
+        }
+        
+        .weight-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="range"], input[type="number"], select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-danger {
+            background-color: var(--secondary);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-accent {
+            background-color: var(--accent);
+            color: var(--dark);
+        }
+        
+        .btn-accent:hover {
+            background-color: #f39c12;
+        }
+        
+        .results {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .result-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .balanced {
+            background-color: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid var(--green);
+        }
+        
+        .not-balanced {
+            background-color: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid var(--red);
+        }
+        
+        .numerical-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .numerical-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .numerical-box h4 {
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background-color: #f1f1f1;
+            padding: 5px;
+            border-radius: 4px;
+            margin: 5px 0;
+            display: inline-block;
+        }
+        
+        .assessment {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .question {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .correct {
+            background-color: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid var(--green);
+            display: block;
+        }
+        
+        .incorrect {
+            background-color: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid var(--red);
+            display: block;
+        }
+        
+        .experiment-log {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary);
+            background-color: #f9f9f9;
+        }
+        
+        .mode-switch {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .mode-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .animation-btn {
+            flex: 1;
+            padding: 10px;
+        }
+        
+        /* 고급 모드용 UI */
+        .angle-control {
+            display: none;
+        }
+        
+        .advanced-mode .angle-control {
+            display: block;
+        }
+        
+        .advanced-option {
+            display: none;
+        }
+        
+        .advanced-mode .advanced-option {
+            display: block;
+        }
+        
+        /* 측정값 표시 스타일 */
+        .measurement {
+            position: absolute;
+            font-size: 12px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2px 4px;
+            border-radius: 2px;
+            z-index: 20;
+        }
+        
+        /* 마커 컨테이너 */
+        .markers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        /* 수식 편집기 스타일 */
+        .equation-editor {
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 80px;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .simulation-area {
+                height: 350px;
+            }
+            
+            .info-box, .control-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>돌림힘과 지레의 평형 조건 시뮬레이션</h1>
+            <p>고등학교 물리학I - 힘과 운동</p>
+        </header>
+        
+        <div class="info-container">
+            <div class="info-box">
+                <h3>학습 목표</h3>
+                <p>회전운동의 원인이 되는 돌림힘의 정의와 계산을 이해하고, 지레가 평형을 이루는 조건(∑τ = 0)을 수리적으로 탐구한다.</p>
+                <ul>
+                    <li>돌림힘(τ = r × F = rF·sinθ)의 개념 이해</li>
+                    <li>시계방향/반시계방향 돌림힘 부호 개념 습득</li>
+                    <li>평형 조건(∑τ = 0, ∑F = 0) 적용</li>
+                    <li>모멘트 암, 힘의 크기, 방향에 따른 총합 계산</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h3>교육과정 정보</h3>
+                <p><strong>학년군 및 과목:</strong> 고등학교 / 물리학 I</p>
+                <p><strong>단원명:</strong> I. 역학 / 2. 힘과 운동</p>
+                <p><strong>성취기준:</strong> 고등 물리학Ⅰ 10-물리Ⅰ-03</p>
+                <p>"힘의 합성과 평형 조건, 돌림힘의 개념을 이해하고 이를 일상생활이나 과학기술 사례에 적용한다."</p>
+            </div>
+        </div>
+        
+        <div class="simulation-container">
+            <div class="mode-switch">
+                <button class="mode-btn active" id="basic-mode-btn">기본 모드</button>
+                <button class="mode-btn" id="advanced-mode-btn">고급 모드</button>
+            </div>
+            
+            <div class="simulation-area">
+                <div class="lever-container">
+                    <div class="lever" id="lever"></div>
+                    <div class="fulcrum" id="fulcrum"></div>
+                    <div class="markers" id="markers"></div>
+                    <!-- 초기 추 위치 직접 설정 -->
+                    <div class="weight-container" id="left-weight-container" style="left: 30%; top: 50%;">
+                        <div class="weight-string" id="left-string"></div>
+                        <div class="weight" id="left-weight" data-side="left">100g</div>
+                    </div>
+                    <div class="weight-container" id="right-weight-container" style="left: 70%; top: 50%;">
+                        <div class="weight-string" id="right-string"></div>
+                        <div class="weight" id="right-weight" data-side="right">100g</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <h3>왼쪽 추 설정</h3>
+                    <div class="weight-control">
+                        <label for="left-mass">질량 (g):</label>
+                        <input type="number" id="left-mass" min="1" max="500" value="100">
+                        <input type="range" id="left-mass-slider" min="1" max="500" value="100">
+                    </div>
+                    <div class="control-item">
+                        <label for="left-distance">회전축으로부터의 거리 (cm):</label>
+                        <input type="number" id="left-distance" min="1" max="50" value="20">
+                        <input type="range" id="left-distance-slider" min="1" max="50" value="20">
+                    </div>
+                    <div class="control-item angle-control">
+                        <label for="left-angle">힘의 방향 (도):</label>
+                        <input type="number" id="left-angle" min="0" max="180" value="90">
+                        <input type="range" id="left-angle-slider" min="0" max="180" value="90">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>오른쪽 추 설정</h3>
+                    <div class="weight-control">
+                        <label for="right-mass">질량 (g):</label>
+                        <input type="number" id="right-mass" min="1" max="500" value="100">
+                        <input type="range" id="right-mass-slider" min="1" max="500" value="100">
+                    </div>
+                    <div class="control-item">
+                        <label for="right-distance">회전축으로부터의 거리 (cm):</label>
+                        <input type="number" id="right-distance" min="1" max="50" value="20">
+                        <input type="range" id="right-distance-slider" min="1" max="50" value="20">
+                    </div>
+                    <div class="control-item angle-control">
+                        <label for="right-angle">힘의 방향 (도):</label>
+                        <input type="number" id="right-angle" min="0" max="180" value="90">
+                        <input type="range" id="right-angle-slider" min="0" max="180" value="90">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-item advanced-option">
+                        <label for="fulcrum-position">회전축 위치 (중심으로부터):</label>
+                        <input type="range" id="fulcrum-position" min="-40" max="40" value="0">
+                        <span id="fulcrum-position-value">0 cm</span>
+                    </div>
+                    <div class="animation-controls">
+                        <button id="apply-btn" class="animation-btn">적용하기</button>
+                        <button id="reset-btn" class="animation-btn btn-danger">초기화</button>
+                        <button id="random-btn" class="animation-btn btn-accent">랜덤 조건</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results">
+                <h3>실험 결과</h3>
+                <div id="balance-result" class="result-item">
+                    결과가 여기에 표시됩니다. "적용하기" 버튼을 눌러주세요.
+                </div>
+                
+                <div class="numerical-results">
+                    <div class="numerical-box">
+                        <h4>왼쪽 돌림힘 (τ<sub>L</sub>)</h4>
+                        <div id="left-torque-value">0 N·m</div>
+                        <div id="left-torque-equation" class="formula">τ = r × F × sinθ</div>
+                    </div>
+                    
+                    <div class="numerical-box">
+                        <h4>오른쪽 돌림힘 (τ<sub>R</sub>)</h4>
+                        <div id="right-torque-value">0 N·m</div>
+                        <div id="right-torque-equation" class="formula">τ = r × F × sinθ</div>
+                    </div>
+                    
+                    <div class="numerical-box">
+                        <h4>총 돌림힘 (∑τ)</h4>
+                        <div id="total-torque-value">0 N·m</div>
+                        <div id="total-torque-equation" class="formula">∑τ = τ<sub>L</sub> + τ<sub>R</sub></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="assessment">
+                <h3>학습 평가</h3>
+                <div class="question" id="current-question">
+                    <p>다음 조건에서 지레가 평형을 이루는지 판단하고, 그 이유를 돌림힘의 식을 이용하여 설명하세요.</p>
+                    <p>왼쪽 추: 200g, 회전축으로부터 15cm</p>
+                    <p>오른쪽 추: 150g, 회전축으로부터 20cm</p>
+                    <textarea class="equation-editor" id="answer-input" placeholder="∑τ = 0이 되는지 계산 과정을 포함하여 설명하세요."></textarea>
+                    <button id="check-answer-btn">정답 확인</button>
+                    <div id="answer-feedback" class="feedback"></div>
+                </div>
+                <button id="new-question-btn">새 문제 생성하기</button>
+            </div>
+            
+            <div class="experiment-log">
+                <h3>실험 기록</h3>
+                <div id="log-container">
+                    <!-- 실험 기록이 여기에 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수 설정
+        let isAdvancedMode = false;
+        let isDragging = false;
+        let draggedWeight = null;
+        let experimentLog = [];
+        let isBalanced = false;
+        
+        // DOM 요소
+        const lever = document.getElementById('lever');
+        const fulcrum = document.getElementById('fulcrum');
+        const markers = document.getElementById('markers');
+        const balanceResult = document.getElementById('balance-result');
+        const leftTorqueValue = document.getElementById('left-torque-value');
+        const rightTorqueValue = document.getElementById('right-torque-value');
+        const totalTorqueValue = document.getElementById('total-torque-value');
+        const leftTorqueEquation = document.getElementById('left-torque-equation');
+        const rightTorqueEquation = document.getElementById('right-torque-equation');
+        const totalTorqueEquation = document.getElementById('total-torque-equation');
+        const logContainer = document.getElementById('log-container');
+        
+        // 입력 요소
+        const leftMass = document.getElementById('left-mass');
+        const leftMassSlider = document.getElementById('left-mass-slider');
+        const leftDistance = document.getElementById('left-distance');
+        const leftDistanceSlider = document.getElementById('left-distance-slider');
+        const leftAngle = document.getElementById('left-angle');
+        const leftAngleSlider = document.getElementById('left-angle-slider');
+        
+        const rightMass = document.getElementById('right-mass');
+        const rightMassSlider = document.getElementById('right-mass-slider');
+        const rightDistance = document.getElementById('right-distance');
+        const rightDistanceSlider = document.getElementById('right-distance-slider');
+        const rightAngle = document.getElementById('right-angle');
+        const rightAngleSlider = document.getElementById('right-angle-slider');
+        
+        const fulcrumPosition = document.getElementById('fulcrum-position');
+        const fulcrumPositionValue = document.getElementById('fulcrum-position-value');
+        
+        // 버튼
+        const applyBtn = document.getElementById('apply-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const randomBtn = document.getElementById('random-btn');
+        const basicModeBtn = document.getElementById('basic-mode-btn');
+        const advancedModeBtn = document.getElementById('advanced-mode-btn');
+        const checkAnswerBtn = document.getElementById('check-answer-btn');
+        const newQuestionBtn = document.getElementById('new-question-btn');
+        
+        // 모드 전환 이벤트 리스너
+        basicModeBtn.addEventListener('click', () => {
+            isAdvancedMode = false;
+            document.body.classList.remove('advanced-mode');
+            basicModeBtn.classList.add('active');
+            advancedModeBtn.classList.remove('active');
+            resetSimulation();
+        });
+        
+        advancedModeBtn.addEventListener('click', () => {
+            isAdvancedMode = true;
+            document.body.classList.add('advanced-mode');
+            advancedModeBtn.classList.add('active');
+            basicModeBtn.classList.remove('active');
+        });
+        
+        // 입력값 동기화 함수들
+        leftMass.addEventListener('input', () => {
+            leftMassSlider.value = leftMass.value;
+        });
+        
+        leftMassSlider.addEventListener('input', () => {
+            leftMass.value = leftMassSlider.value;
+        });
+        
+        leftDistance.addEventListener('input', () => {
+            leftDistanceSlider.value = leftDistance.value;
+        });
+        
+        leftDistanceSlider.addEventListener('input', () => {
+            leftDistance.value = leftDistanceSlider.value;
+        });
+        
+        leftAngle.addEventListener('input', () => {
+            leftAngleSlider.value = leftAngle.value;
+        });
+        
+        leftAngleSlider.addEventListener('input', () => {
+            leftAngle.value = leftAngleSlider.value;
+        });
+        
+        rightMass.addEventListener('input', () => {
+            rightMassSlider.value = rightMass.value;
+        });
+        
+        rightMassSlider.addEventListener('input', () => {
+            rightMass.value = rightMassSlider.value;
+        });
+        
+        rightDistance.addEventListener('input', () => {
+            rightDistanceSlider.value = rightDistance.value;
+        });
+        
+        rightDistanceSlider.addEventListener('input', () => {
+            rightDistance.value = rightDistanceSlider.value;
+        });
+        
+        rightAngle.addEventListener('input', () => {
+            rightAngleSlider.value = rightAngle.value;
+        });
+        
+        rightAngleSlider.addEventListener('input', () => {
+            rightAngle.value = rightAngleSlider.value;
+        });
+        
+        fulcrumPosition.addEventListener('input', () => {
+            const value = fulcrumPosition.value;
+            fulcrumPositionValue.textContent = `${value} cm`;
+            updateFulcrumPosition(parseInt(value));
+        });
+        
+        // 버튼 이벤트 리스너
+        applyBtn.addEventListener('click', applySettings);
+        resetBtn.addEventListener('click', resetSimulation);
+        randomBtn.addEventListener('click', randomizeSettings);
+        checkAnswerBtn.addEventListener('click', checkAnswer);
+        newQuestionBtn.addEventListener('click', generateNewQuestion);
+        
+        // 추 위치 업데이트 함수
+        function updateWeightPositions() {
+              const leverWidth = lever.offsetWidth;
+  const leverHeight = lever.offsetHeight;
+  const leverRect = lever.getBoundingClientRect();
+  const leverCenterY = leverRect.top + window.scrollY + leverHeight / 2;
+  const leverCenterX = leverWidth / 2;
+
+  const fulcrumOffset = 0;
+  const fulcrumPosX = leverCenterX + fulcrumOffset;
+
+  const scale = leverWidth / 100;
+  const leftWeightPosX = fulcrumPosX - (leftDistance * scale);
+  const rightWeightPosX = fulcrumPosX + (rightDistance * scale);
+
+  const baseHeight = 40;
+  const maxHeight = 80;
+  const leftHeight = baseHeight + (leftMassVal / 500) * (maxHeight - baseHeight);
+  const rightHeight = baseHeight + (rightMassVal / 500) * (maxHeight - baseHeight);
+
+  const leftWeightContainer = document.getElementById('left-weight-container');
+  const rightWeightContainer = document.getElementById('right-weight-container');
+  const leftWeight = document.getElementById('left-weight');
+  const rightWeight = document.getElementById('right-weight');
+
+  leftWeightContainer.style.left = `${leftWeightPosX}px`;
+  rightWeightContainer.style.left = `${rightWeightPosX}px`;
+  leftWeightContainer.style.top = `${leverCenterY}px`;
+  rightWeightContainer.style.top = `${leverCenterY}px`;
+
+  leftWeight.style.height = `${leftHeight}px`;
+  rightWeight.style.height = `${rightHeight}px`;
+  leftWeight.textContent = `${leftMassVal}g`;
+  rightWeight.textContent = `${rightMassVal}g`;
+
+  const leftString = document.getElementById('left-string');
+  const rightString = document.getElementById('right-string');
+  const stringLength = 80;
+
+  leftString.style.height = `${stringLength}px`;
+  rightString.style.height = `${stringLength}px`;
+  leftString.style.marginTop = `-${stringLength}px`;
+  rightString.style.marginTop = `-${stringLength}px`;
+
+  leftWeightContainer.style.transform = 'rotate(0deg) translateY(-50%)';
+  rightWeightContainer.style.transform = 'rotate(0deg) translateY(-50%)';
+            
+            // 회전축 위치 (고급 모드에서 변경 가능)
+            const fulcrumOffset = isAdvancedMode ? parseInt(fulcrumPosition.value) : 0;
+            const fulcrumPosX = leverCenter + fulcrumOffset;
+            
+            // 추 위치를 픽셀로 변환하는 계산 방식 수정
+            // 중앙(회전축)에서부터 정확한 비율로 계산
+            const leftDistanceVal = parseInt(leftDistance.value);
+            const rightDistanceVal = parseInt(rightDistance.value);
+            
+            // 레버 너비를 기준으로 위치 계산 (정확한 비율 유지)
+            const scale = leverWidth / 100; // 1cm당 픽셀 비율
+            const leftWeightPosX = fulcrumPosX - (leftDistanceVal * scale);
+            const rightWeightPosX = fulcrumPosX + (rightDistanceVal * scale);
+            
+            // 각도 계산 (고급 모드용)
+            const leftAngleVal = isAdvancedMode ? parseInt(leftAngle.value) : 90;
+            const rightAngleVal = isAdvancedMode ? parseInt(rightAngle.value) : 90;
+            
+            // 질량에 따른 추 크기 조정
+            const leftMassVal = parseInt(leftMass.value);
+            const rightMassVal = parseInt(rightMass.value);
+            
+            // 추 크기 비율 조정 (질량에 비례하되 너무 크지 않게)
+            const baseHeight = 40;
+            const maxHeight = 80;
+            const leftHeight = baseHeight + (leftMassVal / 500) * (maxHeight - baseHeight);
+            const rightHeight = baseHeight + (rightMassVal / 500) * (maxHeight - baseHeight);
+            
+            // DOM 요소 가져오기
+            const leftWeightContainer = document.getElementById('left-weight-container');
+            const rightWeightContainer = document.getElementById('right-weight-container');
+            const leftWeight = document.getElementById('left-weight');
+            const rightWeight = document.getElementById('right-weight');
+            
+            // 추 컨테이너 위치 설정 - 정확히 지레 위에 배치
+            leftWeightContainer.style.left = `${leftWeightPosX}px`;
+            leftWeightContainer.style.top = `${lever.offsetTop}px`;
+            
+            rightWeightContainer.style.left = `${rightWeightPosX}px`;
+            rightWeightContainer.style.top = `${lever.offsetTop}px`;
+            
+            // 추 크기 및 내용 설정
+            leftWeight.style.width = '30px';
+            leftWeight.style.height = `${leftHeight}px`;
+            leftWeight.textContent = `${leftMassVal}g`;
+            
+            rightWeight.style.width = '30px';
+            rightWeight.style.height = `${rightHeight}px`;
+            rightWeight.textContent = `${rightMassVal}g`;
+            
+            // 줄 길이 설정
+            const leftString = document.getElementById('left-string');
+            const rightString = document.getElementById('right-string');
+            leftString.style.height = `80px`;
+            rightString.style.height = `80px`;
+            
+            // 마커 및 시각화 요소 업데이트
+            updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
+        }
+        
+        // 회전축 위치 업데이트 함수
+        function updateFulcrumPosition(offset) {
+            const leverWidth = lever.offsetWidth;
+            const leverCenter = leverWidth / 2;
+            
+            // 회전축 위치 변경
+            fulcrum.style.left = `${leverCenter + offset}px`;
+            
+            // 위치 변경 후 추 위치 재계산
+            updateWeightPositions();
+        }
+        
+        // 시각화 요소 업데이트 함수
+        function updateVisualizations(leftX, rightX, leftAngle, rightAngle, fulcrumX) {
+            // 기존 마커 제거
+            markers.innerHTML = '';
+            
+            // 왼쪽 토크 시각화
+            visualizeTorque('left', leftX, leftAngle, fulcrumX);
+            
+            // 오른쪽 토크 시각화
+            visualizeTorque('right', rightX, rightAngle, fulcrumX);
+        }
+        
+        // 돌림힘 시각화 함수
+        function visualizeTorque(side, weightX, angle, fulcrumX) {
+            // 레버 중앙 높이 (Y좌표)
+            const leverY = lever.offsetTop + lever.offsetHeight / 2;
+            
+            // 거리 표시 라벨
+            const distanceLabel = document.createElement('div');
+            distanceLabel.className = 'measurement';
+            distanceLabel.style.left = `${(weightX + fulcrumX) / 2}px`;
+            distanceLabel.style.top = `${leverY + 15}px`;
+            
+            const distance = side === 'left' ? 
+                parseFloat(leftDistance.value) : 
+                parseFloat(rightDistance.value);
+            
+            distanceLabel.textContent = `${distance} cm`;
+            markers.appendChild(distanceLabel);
+            
+            // 고급 모드에서만 모멘트 암과 각도 표시
+            if (isAdvancedMode) {
+                // 모멘트 암 시각화 (회전축에서 추까지의 수평 거리)
+                const momentArm = document.createElement('div');
+                momentArm.className = 'moment-arm';
+                
+                // 모멘트 암 길이 계산
+                const armLength = Math.abs(fulcrumX - weightX);
+                
+                // 정확한 위치 설정 - 회전축에서 시작하도록
+                momentArm.style.top = `${leverY}px`;
+                
+                if (side === 'left') {
+                    // 왼쪽 추일 경우
+                    if (weightX < fulcrumX) {
+                        // 정상 위치: 회전축 왼쪽에 추
+                        momentArm.style.left = `${weightX}px`;
+                        momentArm.style.width = `${armLength}px`;
+                    } else {
+                        // 비정상 위치: 회전축 오른쪽에 추
+                        momentArm.style.left = `${fulcrumX}px`;
+                        momentArm.style.width = `${armLength}px`;
+                    }
+                    momentArm.style.backgroundColor = 'rgba(231, 76, 60, 0.8)'; // 빨간색
+                } else {
+                    // 오른쪽 추일 경우
+                    if (weightX > fulcrumX) {
+                        // 정상 위치: 회전축 오른쪽에 추
+                        momentArm.style.left = `${fulcrumX}px`;
+                        momentArm.style.width = `${armLength}px`;
+                    } else {
+                        // 비정상 위치: 회전축 왼쪽에 추
+                        momentArm.style.left = `${weightX}px`;
+                        momentArm.style.width = `${armLength}px`;
+                    }
+                    momentArm.style.backgroundColor = 'rgba(52, 152, 219, 0.8)'; // 파란색
+                }
+                
+                markers.appendChild(momentArm);
+                
+                // 각도 표시 (고급 모드)
+                if (angle !== 90) {
+                    const angleLabel = document.createElement('div');
+                    angleLabel.className = 'measurement';
+                    angleLabel.style.left = `${weightX}px`;
+                    angleLabel.style.top = `${leverY + 40}px`;
+                    angleLabel.textContent = `${angle}°`;
+                    markers.appendChild(angleLabel);
+                }
+            }
+        }
+        
+        // 설정 적용 함수
+        function applySettings() {
+            // 무게 위치 업데이트
+            updateWeightPositions();
+            
+            // 돌림힘 계산
+            const torqueResults = calculateTorques();
+            
+            // 결과 표시
+            displayResults(torqueResults);
+            
+            // 지레 회전 애니메이션
+            animateLever(torqueResults.totalTorque);
+            
+            // 실험 기록에 추가
+            addToExperimentLog(torqueResults);
+        }
+        
+        // 돌림힘 계산 함수
+        function calculateTorques() {
+            // 중력 가속도 (m/s²)
+            const g = 9.8;
+            
+            // 입력값 가져오기
+            const lMass = parseFloat(leftMass.value) / 1000;  // kg 단위로 변환
+            const rMass = parseFloat(rightMass.value) / 1000;  // kg 단위로 변환
+            const lDist = parseFloat(leftDistance.value) / 100;  // m 단위로 변환
+            const rDist = parseFloat(rightDistance.value) / 100;  // m 단위로 변환
+            
+            // 각도 값 가져오기 (고급 모드)
+            const lAngle = isAdvancedMode ? parseFloat(leftAngle.value) : 90;
+            const rAngle = isAdvancedMode ? parseFloat(rightAngle.value) : 90;
+            
+            // 라디안으로 변환
+            const lRad = lAngle * Math.PI / 180;
+            const rRad = rAngle * Math.PI / 180;
+            
+            // 힘 계산 (F = m * g)
+            const lForce = lMass * g;
+            const rForce = rMass * g;
+            
+            // 돌림힘 계산 (τ = r * F * sinθ)
+            const lTorque = lDist * lForce * Math.sin(lRad);
+            const rTorque = -rDist * rForce * Math.sin(rRad);  // 오른쪽은 음수
+            
+            // 총 돌림힘
+            const totalTorque = lTorque + rTorque;
+            
+            // 평형 여부 확인 (오차 허용)
+            const isBalanced = Math.abs(totalTorque) < 0.01;
+            
+            // 수식 표현
+            const lEquation = `τ = ${lDist.toFixed(2)} m × ${lForce.toFixed(2)} N × sin(${lAngle}°) = ${lTorque.toFixed(3)} N·m`;
+            const rEquation = `τ = -${rDist.toFixed(2)} m × ${rForce.toFixed(2)} N × sin(${rAngle}°) = ${rTorque.toFixed(3)} N·m`;
+            const totalEquation = `∑τ = ${lTorque.toFixed(3)} N·m + (${rTorque.toFixed(3)} N·m) = ${totalTorque.toFixed(3)} N·m`;
+            
+            return {
+                leftTorque: lTorque,
+                rightTorque: rTorque,
+                totalTorque: totalTorque,
+                isBalanced: isBalanced,
+                leftEquation: lEquation,
+                rightEquation: rEquation,
+                totalEquation: totalEquation
+            };
+        }
+        
+        // 결과 표시 함수
+        function displayResults(results) {
+            // 돌림힘 값 표시
+            leftTorqueValue.textContent = `${results.leftTorque.toFixed(3)} N·m`;
+            rightTorqueValue.textContent = `${results.rightTorque.toFixed(3)} N·m`;
+            totalTorqueValue.textContent = `${results.totalTorque.toFixed(3)} N·m`;
+            
+            // 수식 표시
+            leftTorqueEquation.textContent = results.leftEquation;
+            rightTorqueEquation.textContent = results.rightEquation;
+            totalTorqueEquation.textContent = results.totalEquation;
+            
+            // 평형 결과 표시
+            if (results.isBalanced) {
+                balanceResult.textContent = "평형 상태: 지레가 평형을 이루고 있습니다! (∑τ ≈ 0)";
+                balanceResult.className = "result-item balanced";
+                isBalanced = true;
+            } else {
+                if (results.totalTorque > 0) {
+                    balanceResult.textContent = "불균형 상태: 지레가 반시계 방향으로 회전합니다. (∑τ > 0)";
+                } else {
+                    balanceResult.textContent = "불균형 상태: 지레가 시계 방향으로 회전합니다. (∑τ < 0)";
+                }
+                balanceResult.className = "result-item not-balanced";
+                isBalanced = false;
+            }
+        }
+        
+        // 지레 회전 애니메이션 함수
+        function animateLever(totalTorque) {
+            // 회전 각도 계산 (토크에 비례)
+            let rotationAngle = 0;
+            
+            if (Math.abs(totalTorque) < 0.01) {
+                rotationAngle = 0;  // 평형 상태
+            } else {
+                // 회전 방향과 크기 결정 (토크에 비례하되 최대 20도)
+                const maxAngle = 20;
+                rotationAngle = Math.min(Math.abs(totalTorque) * 50, maxAngle) * Math.sign(totalTorque);
+            }
+            
+            // 지레 회전 애니메이션 적용
+            lever.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+            
+            // 추 컨테이너도 함께 회전 (지레와 함께 움직이도록)
+            const leftWeightContainer = document.getElementById('left-weight-container');
+            const rightWeightContainer = document.getElementById('right-weight-container');
+            
+            leftWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
+            rightWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
+        }
+        
+        // 실험 기록 추가 함수
+        function addToExperimentLog(results) {
+            // 실험 정보 구성
+            const timestamp = new Date().toLocaleTimeString();
+            const leftSettings = `왼쪽: ${leftMass.value}g, ${leftDistance.value}cm`;
+            const rightSettings = `오른쪽: ${rightMass.value}g, ${rightDistance.value}cm`;
+            const angleInfo = isAdvancedMode ? 
+                `, 각도(좌/우): ${leftAngle.value}°/${rightAngle.value}°` : '';
+            const balanceStatus = results.isBalanced ? '평형' : '불균형';
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <strong>[${timestamp}]</strong> - ${balanceStatus}<br>
+                ${leftSettings}, ${rightSettings}${angleInfo}<br>
+                총 돌림힘: ${results.totalTorque.toFixed(3)} N·m
+            `;
+            
+            // 최대 10개 기록 유지
+            if (logContainer.children.length >= 10) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+            
+            logContainer.appendChild(logEntry);
+            
+            // 실험 기록 객체에 저장
+            experimentLog.push({
+                timestamp: timestamp,
+                leftMass: leftMass.value,
+                rightMass: rightMass.value,
+                leftDistance: leftDistance.value,
+                rightDistance: rightDistance.value,
+                leftAngle: leftAngle.value,
+                rightAngle: rightAngle.value,
+                totalTorque: results.totalTorque,
+                isBalanced: results.isBalanced
+            });
+        }
+        
+        // 초기화 함수
+        function resetSimulation() {
+            // 입력값 초기화
+            leftMass.value = 100;
+            leftMassSlider.value = 100;
+            leftDistance.value = 20;
+            leftDistanceSlider.value = 20;
+            leftAngle.value = 90;
+            leftAngleSlider.value = 90;
+            
+            rightMass.value = 100;
+            rightMassSlider.value = 100;
+            rightDistance.value = 20;
+            rightDistanceSlider.value = 20;
+            rightAngle.value = 90;
+            rightAngleSlider.value = 90;
+            
+            fulcrumPosition.value = 0;
+            fulcrumPositionValue.textContent = '0 cm';
+            
+            // 지레 초기 위치로
+            lever.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            
+            // 추 컨테이너도 초기화
+            const leftWeightContainer = document.getElementById('left-weight-container');
+            const rightWeightContainer = document.getElementById('right-weight-container');
+            
+            if (leftWeightContainer) leftWeightContainer.style.transform = 'rotate(0deg)';
+            if (rightWeightContainer) rightWeightContainer.style.transform = 'rotate(0deg)';
+            
+            // 다시 적용
+            applySettings();
+        }
+        
+        // 랜덤 설정 함수
+        function randomizeSettings() {
+            // 랜덤 값 생성 (적절한 범위 내에서)
+            leftMass.value = Math.floor(Math.random() * 400) + 50;
+            leftMassSlider.value = leftMass.value;
+            leftDistance.value = Math.floor(Math.random() * 40) + 5;
+            leftDistanceSlider.value = leftDistance.value;
+            
+            rightMass.value = Math.floor(Math.random() * 400) + 50;
+            rightMassSlider.value = rightMass.value;
+            rightDistance.value = Math.floor(Math.random() * 40) + 5;
+            rightDistanceSlider.value = rightDistance.value;
+            
+            if (isAdvancedMode) {
+                leftAngle.value = Math.floor(Math.random() * 90) + 45;
+                leftAngleSlider.value = leftAngle.value;
+                rightAngle.value = Math.floor(Math.random() * 90) + 45;
+                rightAngleSlider.value = rightAngle.value;
+                
+                const fulcrumOffset = Math.floor(Math.random() * 40) - 20;
+                fulcrumPosition.value = fulcrumOffset;
+                fulcrumPositionValue.textContent = `${fulcrumOffset} cm`;
+            }
+            
+            // 설정 적용
+            applySettings();
+        }
+        
+        // 정답 확인 함수
+        function checkAnswer() {
+            const questionText = document.querySelector('#current-question p:nth-child(2)').textContent;
+            const leftMatch = questionText.match(/왼쪽 추: (\d+)g, 회전축으로부터 (\d+)cm/);
+            const rightMatch = document.querySelector('#current-question p:nth-child(3)').textContent.match(/오른쪽 추: (\d+)g, 회전축으로부터 (\d+)cm/);
+            
+            if (!leftMatch || !rightMatch) return;
+            
+            const lMass = parseInt(leftMatch[1]);
+            const lDist = parseInt(leftMatch[2]);
+            const rMass = parseInt(rightMatch[1]);
+            const rDist = parseInt(rightMatch[2]);
+            
+            const answerInput = document.getElementById('answer-input').value;
+            const answerFeedback = document.getElementById('answer-feedback');
+            
+            // 정답 계산
+            const g = 9.8;
+            const leftTorque = (lMass / 1000) * g * (lDist / 100);
+            const rightTorque = -(rMass / 1000) * g * (rDist / 100);
+            const totalTorque = leftTorque + rightTorque;
+            const isBalanced = Math.abs(totalTorque) < 0.01;
+            
+            // 학생 답변 평가
+            let isCorrect = false;
+            
+            // 핵심 개념이 포함되어 있는지 확인
+            const mentionsTorque = answerInput.includes('돌림힘') || answerInput.includes('토크') || answerInput.includes('τ');
+            const mentionsFormula = answerInput.includes('=') && (answerInput.includes('×') || answerInput.includes('*'));
+            const mentionsBalance = answerInput.includes('평형') || answerInput.includes('∑τ = 0');
+            
+            // 정답 여부에 대한 언급이 있는지 확인
+            const mentionsCorrectResult = isBalanced ? 
+                answerInput.includes('평형') || answerInput.includes('균형') || answerInput.includes('∑τ = 0') : 
+                answerInput.includes('불균형') || answerInput.includes('회전');
+            
+            // 계산 과정이 있는지 확인
+            const hasCalculations = answerInput.includes('N·m') || answerInput.includes('Nm');
+            
+            if (mentionsTorque && mentionsFormula && mentionsBalance && mentionsCorrectResult && hasCalculations) {
+                isCorrect = true;
+            }
+            
+            // 피드백 제공
+            if (isCorrect) {
+                answerFeedback.className = 'feedback correct';
+                answerFeedback.innerHTML = `
+                    <strong>정답입니다!</strong><br>
+                    올바른 계산 과정과 평형 조건을 적용하셨습니다.<br>
+                    왼쪽 돌림힘: ${leftTorque.toFixed(3)} N·m<br>
+                    오른쪽 돌림힘: ${rightTorque.toFixed(3)} N·m<br>
+                    총 돌림힘: ${totalTorque.toFixed(3)} N·m<br>
+                    ${isBalanced ? '따라서 지레는 평형 상태입니다.' : '따라서 지레는 불균형 상태입니다.'}
+                `;
+            } else {
+                answerFeedback.className = 'feedback incorrect';
+                answerFeedback.innerHTML = `
+                    <strong>다시 생각해보세요.</strong><br>
+                    다음 사항을 고려해 주세요:<br>
+                    - 각 물체의 질량에 중력가속도를 곱해 무게를 구했나요?<br>
+                    - 각 물체의 돌림힘을 τ = r × F 공식으로 계산했나요?<br>
+                    - 오른쪽 돌림힘의 방향(음수)을 고려했나요?<br>
+                    - 총 돌림힘 계산 후 평형 여부를 판단했나요?<br>
+                    <br>
+                    참조: 왼쪽 돌림힘 = ${leftTorque.toFixed(3)} N·m, 오른쪽 돌림힘 = ${rightTorque.toFixed(3)} N·m
+                `;
+            }
+        }
+        
+        // 새 문제 생성 함수
+        function generateNewQuestion() {
+            // 랜덤 값 생성
+            const lMass = Math.floor(Math.random() * 300) + 100;
+            const rMass = Math.floor(Math.random() * 300) + 100;
+            const lDist = Math.floor(Math.random() * 30) + 10;
+            const rDist = Math.floor(Math.random() * 30) + 10;
+            
+            // 문제 텍스트 업데이트
+            const questionElement = document.getElementById('current-question');
+            questionElement.innerHTML = `
+                <p>다음 조건에서 지레가 평형을 이루는지 판단하고, 그 이유를 돌림힘의 식을 이용하여 설명하세요.</p>
+                <p>왼쪽 추: ${lMass}g, 회전축으로부터 ${lDist}cm</p>
+                <p>오른쪽 추: ${rMass}g, 회전축으로부터 ${rDist}cm</p>
+                <textarea class="equation-editor" id="answer-input" placeholder="∑τ = 0이 되는지 계산 과정을 포함하여 설명하세요."></textarea>
+                <button id="check-answer-btn">정답 확인</button>
+                <div id="answer-feedback" class="feedback"></div>
+            `;
+            
+            // 이벤트 리스너 다시 연결
+            document.getElementById('check-answer-btn').addEventListener('click', checkAnswer);
+            
+            // 피드백 초기화
+            document.getElementById('answer-feedback').className = 'feedback';
+            document.getElementById('answer-feedback').textContent = '';
+        }
+        
+        // 드래그 이벤트 처리 (고급 모드용)
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !isAdvancedMode) return;
+            
+            const leverContainer = document.querySelector('.lever-container');
+            const containerRect = leverContainer.getBoundingClientRect();
+            const leverWidth = lever.offsetWidth;
+            const leverCenter = containerRect.left + containerRect.width / 2;
+            
+            // 회전축 위치
+            const fulcrumPosX = leverCenter + parseInt(fulcrumPosition.value);
+            
+            // 드래그 위치 계산
+            const posX = e.clientX - containerRect.left;
+            
+            // 회전축으로부터의 거리 계산 (픽셀 -> cm)
+            const distance = Math.abs(posX - fulcrumPosX) / (leverWidth / 2) * 50;
+            
+            const side = draggedWeight.side;
+            
+            // 방향에 따라 입력 값 업데이트
+            if (side === 'left') {
+                if (posX < fulcrumPosX) {  // 왼쪽 영역에서만 허용
+                    leftDistance.value = Math.min(Math.max(Math.round(distance), 1), 50);
+                    leftDistanceSlider.value = leftDistance.value;
+                    updateWeightPositions();
+                }
+            } else {
+                if (posX > fulcrumPosX) {  // 오른쪽 영역에서만 허용
+                    rightDistance.value = Math.min(Math.max(Math.round(distance), 1), 50);
+                    rightDistanceSlider.value = rightDistance.value;
+                    updateWeightPositions();
+                }
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging && isAdvancedMode) {
+                isDragging = false;
+                draggedWeight = null;
+                applySettings();  // 설정 재적용
+            }
+        });
+        
+        // 드래그 시작 이벤트 설정
+        const leftWeight = document.getElementById('left-weight');
+        const rightWeight = document.getElementById('right-weight');
+        
+        leftWeight.addEventListener('mousedown', (e) => {
+            if (!isAdvancedMode) return;
+            
+            isDragging = true;
+            draggedWeight = {
+                element: leftWeight,
+                side: 'left',
+                offsetX: e.clientX - leftWeight.getBoundingClientRect().left
+            };
+        });
+        
+        rightWeight.addEventListener('mousedown', (e) => {
+            if (!isAdvancedMode) return;
+            
+            isDragging = true;
+            draggedWeight = {
+                element: rightWeight,
+                side: 'right',
+                offsetX: e.clientX - rightWeight.getBoundingClientRect().left
+            };
+        });
+        
+        // 시뮬레이션 초기화
+        window.addEventListener('load', () => {
+            // 초기 설정값 적용
+            applySettings();
+            
+            // 첫 번째 문제 생성
+            generateNewQuestion();
+        });
+    </script>
+</body>
+</html>
