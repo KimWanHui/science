@@ -992,17 +992,7 @@ rightString.style.top = `${leverY}px`;
     rightWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
 }
             
-            // 지레 회전 애니메이션 적용
-            lever.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
-            
-            // 추 컨테이너도 함께 회전 (지레와 함께 움직이도록)
-            const leftWeightContainer = document.getElementById('left-weight-container');
-            const rightWeightContainer = document.getElementById('right-weight-container');
-            
-            leftWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
-            rightWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
-        }
-        
+    
         // 실험 기록 추가 함수
         function addToExperimentLog(results) {
             // 실험 정보 구성
