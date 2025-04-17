@@ -90,13 +90,13 @@ T<!DOCTYPE html>
         }
         
         .lever-container {
-            width: 100%;
-            height: 65%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
+    width: 100%;
+    height: 65%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* ✅ 필수 */
+}
         
         .lever {
             width: 90%;
@@ -965,17 +965,26 @@ function updateWeightPositions() {
         }
         
         // 지레 회전 애니메이션 함수
-        function animateLever(totalTorque) {
-            // 회전 각도 계산 (토크에 비례)
-            let rotationAngle = 0;
-            
-            if (Math.abs(totalTorque) < 0.01) {
-                rotationAngle = 0;  // 평형 상태
-            } else {
-                // 회전 방향과 크기 결정 (토크에 비례하되 최대 20도)
-                const maxAngle = 20;
-                rotationAngle = Math.min(Math.abs(totalTorque) * 50, maxAngle) * Math.sign(totalTorque);
-            }
+      function animateLever(totalTorque) {
+    let rotationAngle = 0;
+
+    if (Math.abs(totalTorque) < 0.01) {
+        rotationAngle = 0;
+    } else {
+        const maxAngle = 20;
+        rotationAngle = Math.min(Math.abs(totalTorque) * 50, maxAngle) * Math.sign(totalTorque);
+    }
+
+    // ✅ translate 제거
+    lever.style.transform = `rotate(${rotationAngle}deg)`;
+
+    // 추들도 같이 회전
+    const leftWeightContainer = document.getElementById('left-weight-container');
+    const rightWeightContainer = document.getElementById('right-weight-container');
+
+    leftWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
+    rightWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
+}
             
             // 지레 회전 애니메이션 적용
             lever.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
