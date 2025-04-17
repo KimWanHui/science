@@ -135,7 +135,7 @@
             z-index: 8;
         }
         
- .weight-string {
+    .weight-string {
       width: 2px;
       background-color: #000;
       margin: 0;
@@ -722,7 +722,7 @@
         newQuestionBtn.addEventListener('click', generateNewQuestion);
         
         // 추 위치 업데이트 함수
- function updateWeightPositions() {
+    function updateWeightPositions() {
       const leverWidth = lever.offsetWidth;
       const leverHeight = lever.offsetHeight;
       const leverTop = lever.offsetTop;
@@ -770,19 +770,18 @@
       rightWeight.style.height = `${rightHeight}px`;
       rightWeight.textContent = `${rightMassVal}g`;
 
-      leftString.style.height = `80px`;
-      rightString.style.height = `80px`;
-
       leftString.style.top = '0';
       leftString.style.left = '50%';
       leftString.style.transform = 'translateX(-50%)';
+      leftString.style.height = `${parseFloat(leftWeight.style.height)}px`;
 
       rightString.style.top = '0';
       rightString.style.left = '50%';
       rightString.style.transform = 'translateX(-50%)';
+      rightString.style.height = `${parseFloat(rightWeight.style.height)}px`;
 
       updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
-    }        
+    }
         
         // 회전축 위치 업데이트 함수
         function updateFulcrumPosition(offset) {
