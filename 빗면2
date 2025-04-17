@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>빗면 위 수레 시뮬레이션</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --danger: #e74c3c;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fa;
+      font-size: 16px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+    .simulation-area {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      background: #ecf0f1;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .inclined-plane {
+      position: absolute;
+      width: 500px;
+      height: 8px;
+      background: #7f8c8d;
+      top: 100px;
+      left: 100px;
+      transform-origin: left bottom;
+    }
+    .cart {
+      position: absolute;
+      width: 50px;
+      height: 30px;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+      transform-origin: center;
+    }
+    .variable-emoji {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #555;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .controls {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .mass-option {
+      display: inline-block;
+      padding: 6px 12px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .mass-option.selected {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    button {
+      padding: 8px 16px;
+      margin-top: 10px;
+      margin-right: 10px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .feedback {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    .feedback.success {
+      background: rgba(46, 204, 113, 0.15);
+      border: 1px solid var(--secondary);
+    }
+    .feedback.error {
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid var(--danger);
+    }
+    .tab-btn {
+      display: inline-block;
+      margin: 5px 5px 0 0;
+      padding: 10px 15px;
+      background: #95a5a6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #2c3e50;
+    }
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #34495e;
+      color: white;
+    }
+    .quiz-option {
+      padding: 10px;
+      margin: 5px 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .quiz-option.selected {
+      background: var(--primary);
+      color: white;
+    }
+    .quiz-feedback {
+      margin-top: 10px;
+      font-weight: bold;
+      display: none;
+    }
+    @media (max-width: 600px) {
+      .mass-option, .tab-btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .simulation-area { height: 250px; }
+      .inclined-plane { width: 80%; left: 10%; }
+      .cart { width: 40px; height: 24px; font-size: 13px; }
+      canvas { width: 100% !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>빗면 위 수레 등가속도 운동 시뮬레이션</h2>
+
+    <div class="simulation-area">
+      <div class="inclined-plane" id="inclined-plane"></div>
+      <div class="cart" id="cart">0.5kg</div>
+      <div class="variable-emoji" id="variable-emoji">[바람]</div>
+    </div>
+
+    <div class="controls">
+      <label>기울기 각도: <span id="angle-value">20</span>°</label><br>
+      <input type="range" id="angle-slider" min="5" max="45" value="20" step="1"><br><br>
+
+      <label>수레 질량:</label><br>
+      <span class="mass-option selected" data-mass="0.5">0.5kg</span>
+      <span class="mass-option" data-mass="1.0">1.0kg</span>
+      <span class="mass-option" data-mass="1.5">1.5kg</span><br><br>
+
+      <button id="start-btn" class="btn-primary">실험 시작</button>
+      <button id="reset-btn" class="btn-secondary">초기화</button>
+    </div>
+    <!-- 예측 영역 -->
+    <div class="section">
+      <h3>🧠 예측해보기</h3>
+      <p>현재 설정에서 예상되는 가속도는? (단위: m/s²)</p>
+      <input type="number" id="prediction-input" step="0.01" placeholder="예: 2.5">
+      <button id="check-prediction" class="btn-primary">확인</button>
+      <div id="prediction-feedback" class="feedback"></div>
+    </div>
+
+    <!-- 이론 계산 -->
+    <div class="section">
+      <h3>📐 이론적 계산</h3>
+      <p>공식: <code>a = g·sin(θ)</code>, <code>F = m·a</code></p>
+      <p>이론 가속도: <span id="theory-acceleration">-</span> m/s²</p>
+      <p>이론 알짜힘: <span id="theory-force">-</span> N</p>
+      <p>측정 가속도: <span id="measured-acceleration">-</span> m/s²</p>
+      <p>측정 알짜힘: <span id="measured-force">-</span> N</p>
+    </div>
+
+    <!-- 탭 버튼 -->
+    <div class="section">
+      <button class="tab-btn" data-tab="position">📊 위치 그래프</button>
+      <button class="tab-btn" data-tab="velocity">📈 속도 그래프</button>
+      <button class="tab-btn" data-tab="acceleration">⚡ 가속도 그래프</button>
+      <button class="tab-btn" data-tab="data">📋 데이터 테이블</button>
+      <button class="tab-btn" data-tab="quiz">🧪 개념 문제</button>
+    </div>
+
+    <!-- 그래프 탭 콘텐츠 -->
+    <div id="position" class="tab-content">
+      <canvas id="position-chart" width="600" height="300"></canvas>
+      <div class="feedback success" style="margin-top: 10px;">
+        <strong>위치 그래프:</strong> 곡선 형태는 등가속도 운동의 위치 방정식 <code>s = (1/2)·a·t²</code>을 나타냅니다.
+      </div>
+    </div>
+
+    <div id="velocity" class="tab-content">
+      <canvas id="velocity-chart" width="600" height="300"></canvas>
+      <div class="feedback success" style="margin-top: 10px;">
+        <strong>속도 그래프:</strong> 직선 기울기는 가속도를 의미하며 등가속도 운동임을 나타냅니다.
+      </div>
+    </div>
+
+    <div id="acceleration" class="tab-content">
+      <canvas id="acceleration-chart" width="600" height="300"></canvas>
+      <div class="feedback success" style="margin-top: 10px;">
+        <strong>가속도 그래프:</strong> 일정한 수평선은 일정한 알짜힘 <code>F = m·a</code>를 뜻합니다.
+      </div>
+    </div>
+
+    <!-- 데이터 테이블 -->
+    <div id="data" class="tab-content">
+      <h4>📋 실험 데이터 (0~2.0초, 0.2초 간격)</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>시간 (s)</th>
+            <th>위치 (cm)</th>
+            <th>구간 거리 (cm)</th>
+            <th>구간 속력 (cm/s)</th>
+          </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- 문제 -->
+    <div id="quiz" class="tab-content">
+      <h4>문제 1. 등가속도 운동의 특징으로 올바른 것은?</h4>
+      <div class="quiz-option" data-answer="b">시간-속도 그래프가 직선이다.</div>
+      <div class="quiz-option" data-answer="a">시간-위치 그래프가 직선이다.</div>
+      <div class="quiz-option" data-answer="c">가속도-시간 그래프가 곡선이다.</div>
+      <div class="quiz-feedback"></div>
+
+      <h4 style="margin-top: 20px;">문제 2. 가속도는 어떤 값에 비례하는가?</h4>
+      <div class="quiz-option" data-answer="a">기울기 각도의 사인값</div>
+      <div class="quiz-option" data-answer="b">물체의 질량</div>
+      <div class="quiz-feedback"></div>
+    </div>
+<script>
+const g = 9.8;
+let angle = 20;
+let mass = 0.5;
+let isRunning = false;
+let startTime, animationId;
+
+let timeData = [], positionData = [], velocityData = [], accelerationData = [];
+let chartDrawn = { position: false, velocity: false, acceleration: false };
+
+// 초기 설정
+window.onload = () => {
+  updateAngle();
+  updateTheory();
+  resetCart();
+};
+
+// 각도 슬라이더
+document.getElementById("angle-slider").oninput = function () {
+  angle = parseInt(this.value);
+  document.getElementById("angle-value").textContent = angle;
+  updateAngle();
+  updateTheory();
+  resetCart();
+};
+
+// 질량 선택
+document.querySelectorAll(".mass-option").forEach(opt => {
+  opt.onclick = () => {
+    document.querySelectorAll(".mass-option").forEach(o => o.classList.remove("selected"));
+    opt.classList.add("selected");
+    mass = parseFloat(opt.dataset.mass);
+    document.getElementById("cart").textContent = mass + "kg";
+    updateTheory();
+  };
+});
+
+// 실험 시작
+document.getElementById("start-btn").onclick = () => {
+  if (isRunning) return;
+  isRunning = true;
+  startTime = Date.now();
+  timeData = [];
+  positionData = [];
+  velocityData = [];
+  accelerationData = [];
+  animateCart();
+  collectData();
+};
+
+// 초기화
+document.getElementById("reset-btn").onclick = () => {
+  isRunning = false;
+  cancelAnimationFrame(animationId);
+  resetCart();
+  document.getElementById("measured-acceleration").textContent = "-";
+  document.getElementById("measured-force").textContent = "-";
+  document.getElementById("prediction-feedback").style.display = "none";
+  document.getElementById("data-table-body").innerHTML = "";
+  document.getElementById("variable-emoji").style.opacity = 0;
+};
+
+// 빗면 회전
+function updateAngle() {
+  document.getElementById("inclined-plane").style.transform = `rotate(${angle}deg)`;
+}
+
+// 카트 위치 초기화
+function resetCart() {
+  const cart = document.getElementById("cart");
+  cart.style.left = "100px";
+  cart.style.top = (100 - cart.offsetHeight) + "px";
+  cart.style.transform = `rotate(${angle}deg)`;
+}
+
+// 이론값 업데이트
+function updateTheory() {
+  const a = g * Math.sin(angle * Math.PI / 180);
+  const f = mass * a;
+  document.getElementById("theory-acceleration").textContent = a.toFixed(2);
+  document.getElementById("theory-force").textContent = f.toFixed(2);
+}
+
+// 실험 애니메이션
+function animateCart() {
+  if (!isRunning) return;
+  const t = (Date.now() - startTime) / 1000;
+  const a = g * Math.sin(angle * Math.PI / 180);
+  const s = 0.5 * a * t * t;
+  const d = Math.min(s * 20, 400);
+  const rad = angle * Math.PI / 180;
+  const x = 100 + d * Math.cos(rad);
+  const y = 100 + d * Math.sin(rad);
+  const cart = document.getElementById("cart");
+  cart.style.left = `${x}px`;
+  cart.style.top = `${y - cart.offsetHeight}px`;
+  if (d >= 400 || t >= 2.0) {
+    stopExperiment();
+    return;
+  }
+  animationId = requestAnimationFrame(animateCart);
+}
+
+// 실험 종료 시 측정값 및 이모지 표시
+function stopExperiment() {
+  isRunning = false;
+  cancelAnimationFrame(animationId);
+  const aTheory = g * Math.sin(angle * Math.PI / 180);
+  const error = ((Math.random() * 3) / 100) * (Math.random() < 0.5 ? -1 : 1);
+  const aMeasured = aTheory * (1 + error);
+  const fMeasured = mass * aMeasured;
+  document.getElementById("measured-acceleration").textContent = aMeasured.toFixed(2);
+  document.getElementById("measured-force").textContent = fMeasured.toFixed(2);
+  const emoji = document.getElementById("variable-emoji");
+  if (Math.abs(error * 100) < 1) emoji.textContent = "정상";
+  else if (Math.abs(error * 100) < 2) emoji.textContent = "[바람]";
+  else emoji.textContent = "[바람][마찰]";
+  emoji.style.opacity = 1;
+}
+
+// 데이터 수집
+function collectData() {
+  if (!isRunning) return;
+  const t = (Date.now() - startTime) / 1000;
+  const a = g * Math.sin(angle * Math.PI / 180);
+  const s = 0.5 * a * t * t;
+  const v = a * t;
+  timeData.push(t.toFixed(2));
+  positionData.push(s);
+  velocityData.push(v);
+  accelerationData.push(a);
+  if (t <= 2.0) updateDataTable();
+  setTimeout(collectData, 100);
+}
+
+// 데이터 테이블 표시 (0~2.0초, 0.2초 간격만)
+function updateDataTable() {
+  const tbody = document.getElementById("data-table-body");
+  tbody.innerHTML = "";
+  for (let i = 0; i < timeData.length; i++) {
+    const t = parseFloat(timeData[i]);
+    if (Math.abs((t * 10) % 2) > 0.01 || t > 2.0) continue;
+    const x = positionData[i] * 100;
+    const dx = i === 0 ? "-" : ((positionData[i] - positionData[i - 1]) * 100).toFixed(2);
+    const v = i === 0 ? "-" : (parseFloat(dx) / 0.1).toFixed(2);
+    tbody.innerHTML += `<tr>
+      <td>${t.toFixed(1)}</td>
+      <td>${x.toFixed(2)}</td>
+      <td>${dx}</td>
+      <td>${v}</td>
+    </tr>`;
+  }
+}
+
+// 예측 피드백
+document.getElementById("check-prediction").onclick = () => {
+  const val = parseFloat(document.getElementById("prediction-input").value);
+  const theory = g * Math.sin(angle * Math.PI / 180);
+  const error = Math.abs(val - theory) / theory * 100;
+  const fb = document.getElementById("prediction-feedback");
+  fb.style.display = "block";
+  if (error <= 3) {
+    fb.className = "feedback success";
+    fb.innerHTML = `정답입니다! 오차율 ${error.toFixed(1)}%`;
+  } else {
+    fb.className = "feedback error";
+    fb.innerHTML = `오차율 ${error.toFixed(1)}%<br>공식: a = g·sin(θ)`;
+  }
+};
+
+// 탭 전환 + 그래프 클릭 시 초기화
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    const tab = btn.dataset.tab;
+    btn.classList.add("active");
+    document.getElementById(tab).classList.add("active");
+    if (!chartDrawn[tab] && ["position", "velocity", "acceleration"].includes(tab)) {
+      setTimeout(() => drawChart(tab), 100);
+    }
+  };
+});
+
+// 그래프 생성
+function drawChart(tab) {
+  const ctx = document.getElementById(`${tab}-chart`).getContext("2d");
+  const data = tab === "position" ? positionData : tab === "velocity" ? velocityData : accelerationData;
+  const label = tab === "position" ? "위치(m)" : tab === "velocity" ? "속도(m/s)" : "가속도(m/s²)";
+  const color = tab === "position" ? "#2980b9" : tab === "velocity" ? "#2ecc71" : "#e67e22";
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: timeData.map(t => parseFloat(t).toFixed(1)),
+      datasets: [{
+        label: label,
+        data: data.map(v => v.toFixed(2)),
+        borderColor: color,
+        borderWidth: 2,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        x: { title: { display: true, text: "시간 (s)" } },
+        y: { title: { display: true, text: label } }
+      }
+    }
+  });
+  chartDrawn[tab] = true;
+}
+
+// 문제 정답 피드백 (1회만)
+document.querySelectorAll(".quiz-option").forEach(opt => {
+  opt.onclick = () => {
+    const parent = opt.closest(".tab-content");
+    parent.querySelectorAll(".quiz-option").forEach(o => o.classList.remove("selected"));
+    opt.classList.add("selected");
+    const feedback = opt.parentElement.querySelector(".quiz-feedback");
+    if (feedback.dataset.shown) return;
+    const q1 = parent.innerHTML.includes("문제 1") && opt.dataset.answer === "b";
+    const q2 = parent.innerHTML.includes("문제 2") && opt.dataset.answer === "a";
+    feedback.textContent = (q1 || q2) ? "정답입니다!" : "틀렸습니다.";
+    feedback.dataset.shown = "true";
+    feedback.style.display = "block";
+  };
+});
+</script>
+</body>
+</html>
