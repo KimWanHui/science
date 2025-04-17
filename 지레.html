@@ -135,7 +135,7 @@
             z-index: 8;
         }
         
-    .weight-string {
+     .weight-string {
       width: 2px;
       background-color: #000;
       margin: 0;
@@ -147,20 +147,19 @@
       left: 50%;
       transform: translateX(-50%);
     }
-        
-        .weight {
-            width: 30px;
-            height: 50px;
-            background-color: #666;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-weight: bold;
-            cursor: move;
-            border-radius: 5px 5px 0 0;
-            margin-top: 0;
-        }
+    .weight {
+      width: 30px;
+      background-color: #666;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      color: white;
+      font-weight: bold;
+      cursor: move;
+      border-radius: 0 0 5px 5px;
+      margin-top: 0;
+      transform-origin: top center;
+    }  
         
         .moment-arm {
             position: absolute;
@@ -722,10 +721,11 @@
         newQuestionBtn.addEventListener('click', generateNewQuestion);
         
         // 추 위치 업데이트 함수
-    function updateWeightPositions() {
+        function updateWeightPositions() {
       const leverWidth = lever.offsetWidth;
       const leverHeight = lever.offsetHeight;
       const leverTop = lever.offsetTop;
+      const leverTopOffset = leverTop + leverHeight / 2;
       const leverCenter = leverWidth / 2;
 
       const fulcrumOffset = isAdvancedMode ? parseInt(fulcrumPosition.value) : 0;
@@ -754,31 +754,22 @@
       const leftString = document.getElementById('left-string');
       const rightString = document.getElementById('right-string');
 
-      const leverTopOffset = leverTop - leverHeight / 2 + leverHeight;
-
       leftWeightContainer.style.left = `${leftWeightPosX}px`;
       leftWeightContainer.style.top = `${leverTopOffset}px`;
 
       rightWeightContainer.style.left = `${rightWeightPosX}px`;
       rightWeightContainer.style.top = `${leverTopOffset}px`;
 
-      leftWeight.style.width = '30px';
       leftWeight.style.height = `${leftHeight}px`;
       leftWeight.textContent = `${leftMassVal}g`;
 
-      rightWeight.style.width = '30px';
       rightWeight.style.height = `${rightHeight}px`;
       rightWeight.textContent = `${rightMassVal}g`;
 
-      leftString.style.top = '0';
-      leftString.style.left = '50%';
-      leftString.style.transform = 'translateX(-50%)';
-      leftString.style.height = `${parseFloat(leftWeight.style.height)}px`;
-
-      rightString.style.top = '0';
-      rightString.style.left = '50%';
-      rightString.style.transform = 'translateX(-50%)';
-      rightString.style.height = `${parseFloat(rightWeight.style.height)}px`;
+      // 실 길이는 지레 아래부터 추 상단까지 거리 계산
+      const stringBaseOffset = 5; // 보정값 (추가 지레와 약간 떨어지도록)
+      leftString.style.height = `${leftHeight + stringBaseOffset}px`;
+      rightString.style.height = `${rightHeight + stringBaseOffset}px`;
 
       updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
     }
