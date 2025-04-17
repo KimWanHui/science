@@ -719,69 +719,58 @@
         newQuestionBtn.addEventListener('click', generateNewQuestion);
         
         // 추 위치 업데이트 함수
-        function updateWeightPositions() {
-            const leverWidth = lever.offsetWidth;
-            const leverCenter = leverWidth / 2;
-            
-            // 회전축 위치 (고급 모드에서 변경 가능)
-            const fulcrumOffset = isAdvancedMode ? parseInt(fulcrumPosition.value) : 0;
-            const fulcrumPosX = leverCenter + fulcrumOffset;
-            
-            // 추 위치를 픽셀로 변환하는 계산 방식 수정
-            // 중앙(회전축)에서부터 정확한 비율로 계산
-            const leftDistanceVal = parseInt(leftDistance.value);
-            const rightDistanceVal = parseInt(rightDistance.value);
-            
-            // 레버 너비를 기준으로 위치 계산 (정확한 비율 유지)
-            const scale = leverWidth / 100; // 1cm당 픽셀 비율
-            const leftWeightPosX = fulcrumPosX - (leftDistanceVal * scale);
-            const rightWeightPosX = fulcrumPosX + (rightDistanceVal * scale);
-            
-            // 각도 계산 (고급 모드용)
-            const leftAngleVal = isAdvancedMode ? parseInt(leftAngle.value) : 90;
-            const rightAngleVal = isAdvancedMode ? parseInt(rightAngle.value) : 90;
-            
-            // 질량에 따른 추 크기 조정
-            const leftMassVal = parseInt(leftMass.value);
-            const rightMassVal = parseInt(rightMass.value);
-            
-            // 추 크기 비율 조정 (질량에 비례하되 너무 크지 않게)
-            const baseHeight = 40;
-            const maxHeight = 80;
-            const leftHeight = baseHeight + (leftMassVal / 500) * (maxHeight - baseHeight);
-            const rightHeight = baseHeight + (rightMassVal / 500) * (maxHeight - baseHeight);
-            
-            // DOM 요소 가져오기
-            const leftWeightContainer = document.getElementById('left-weight-container');
-            const rightWeightContainer = document.getElementById('right-weight-container');
-            const leftWeight = document.getElementById('left-weight');
-            const rightWeight = document.getElementById('right-weight');
-            
-            // 추 컨테이너 위치 설정 - 정확히 지레 위에 배치
-            leftWeightContainer.style.left = `${leftWeightPosX}px`;
-            leftWeightContainer.style.top = `${lever.offsetTop}px`;
-            
-            rightWeightContainer.style.left = `${rightWeightPosX}px`;
-            rightWeightContainer.style.top = `${lever.offsetTop}px`;
-            
-            // 추 크기 및 내용 설정
-            leftWeight.style.width = '30px';
-            leftWeight.style.height = `${leftHeight}px`;
-            leftWeight.textContent = `${leftMassVal}g`;
-            
-            rightWeight.style.width = '30px';
-            rightWeight.style.height = `${rightHeight}px`;
-            rightWeight.textContent = `${rightMassVal}g`;
-            
-            // 줄 길이 설정
-            const leftString = document.getElementById('left-string');
-            const rightString = document.getElementById('right-string');
-            leftString.style.height = `80px`;
-            rightString.style.height = `80px`;
-            
-            // 마커 및 시각화 요소 업데이트
-            updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
-        }
+          function updateWeightPositions() {
+      const leverWidth = lever.offsetWidth;
+      const leverHeight = lever.offsetHeight;
+      const leverTop = lever.offsetTop;
+      const leverCenter = leverWidth / 2;
+
+      const fulcrumOffset = isAdvancedMode ? parseInt(fulcrumPosition.value) : 0;
+      const fulcrumPosX = leverCenter + fulcrumOffset;
+
+      const leftDistanceVal = parseInt(leftDistance.value);
+      const rightDistanceVal = parseInt(rightDistance.value);
+      const scale = leverWidth / 100;
+      const leftWeightPosX = fulcrumPosX - (leftDistanceVal * scale);
+      const rightWeightPosX = fulcrumPosX + (rightDistanceVal * scale);
+
+      const leftAngleVal = isAdvancedMode ? parseInt(leftAngle.value) : 90;
+      const rightAngleVal = isAdvancedMode ? parseInt(rightAngle.value) : 90;
+
+      const leftMassVal = parseInt(leftMass.value);
+      const rightMassVal = parseInt(rightMass.value);
+      const baseHeight = 40;
+      const maxHeight = 80;
+      const leftHeight = baseHeight + (leftMassVal / 500) * (maxHeight - baseHeight);
+      const rightHeight = baseHeight + (rightMassVal / 500) * (maxHeight - baseHeight);
+
+      const leftWeightContainer = document.getElementById('left-weight-container');
+      const rightWeightContainer = document.getElementById('right-weight-container');
+      const leftWeight = document.getElementById('left-weight');
+      const rightWeight = document.getElementById('right-weight');
+      const leftString = document.getElementById('left-string');
+      const rightString = document.getElementById('right-string');
+
+      const leverTopOffset = leverTop - leverHeight / 2 + leverHeight;
+      leftWeightContainer.style.left = `${leftWeightPosX}px`;
+      leftWeightContainer.style.top = `${leverTopOffset}px`;
+
+      rightWeightContainer.style.left = `${rightWeightPosX}px`;
+      rightWeightContainer.style.top = `${leverTopOffset}px`;
+
+      leftWeight.style.width = '30px';
+      leftWeight.style.height = `${leftHeight}px`;
+      leftWeight.textContent = `${leftMassVal}g`;
+
+      rightWeight.style.width = '30px';
+      rightWeight.style.height = `${rightHeight}px`;
+      rightWeight.textContent = `${rightMassVal}g`;
+
+      leftString.style.height = `80px`;
+      rightString.style.height = `80px`;
+
+      updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
+    }
         
         // 회전축 위치 업데이트 함수
         function updateFulcrumPosition(offset) {
