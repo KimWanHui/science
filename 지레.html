@@ -761,10 +761,14 @@ T<!DOCTYPE html>
     rightWeight.style.height = `${rightHeight}px`;
     rightWeight.textContent = `${rightMassVal}g`;
 
-    const leftString = document.getElementById('left-string');
-    const rightString = document.getElementById('right-string');
-    leftString.style.height = `80px`;
-    rightString.style.height = `80px`;
+// 실의 길이를 추 높이에 맞게 조절
+leftString.style.height = `${leftHeight}px`;
+rightString.style.height = `${rightHeight}px`;
+
+// 컨테이너 위치도 지레 중심에 고정 (이미 잘 돼 있는 줄 알지만 다시 명시)
+leftWeightContainer.style.top = `${lever.offsetTop + lever.offsetHeight / 2}px`;
+rightWeightContainer.style.top = `${lever.offsetTop + lever.offsetHeight / 2}px`;
+
 
     updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
 }
