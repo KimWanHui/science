@@ -1002,7 +1002,7 @@ const rightString = document.getElementById('right-string');
 leftString.style.transform = `rotate(${rotationAngle}deg)`;
 rightString.style.transform = `rotate(${rotationAngle}deg)`;
 
-            // 실 길이 자동 조절 (cosθ에 따라 보정)
+// 실 길이 자동 조절 (cosθ에 따라 보정)
 const baseStringLength = 80; // 실의 기본 길이
 const radian = rotationAngle * Math.PI / 180;
 const adjustedLength = baseStringLength / Math.cos(radian);
