@@ -717,7 +717,7 @@ T<!DOCTYPE html>
         newQuestionBtn.addEventListener('click', generateNewQuestion);
         
         // 추 위치 업데이트 함수
-  function updateWeightPositions() {
+function updateWeightPositions() {
     const leverWidth = lever.offsetWidth;
     const leverCenter = leverWidth / 2;
 
@@ -742,17 +742,26 @@ T<!DOCTYPE html>
     const leftHeight = baseHeight + (leftMassVal / 500) * (maxHeight - baseHeight);
     const rightHeight = baseHeight + (rightMassVal / 500) * (maxHeight - baseHeight);
 
+    const leverY = lever.offsetTop + lever.offsetHeight / 2;
+
     const leftWeightContainer = document.getElementById('left-weight-container');
     const rightWeightContainer = document.getElementById('right-weight-container');
     const leftWeight = document.getElementById('left-weight');
     const rightWeight = document.getElementById('right-weight');
+    const leftString = document.getElementById('left-string');
+    const rightString = document.getElementById('right-string');
 
+    // 컨테이너 위치: 지레 중앙 기준 정렬
     leftWeightContainer.style.left = `${leftWeightPosX}px`;
-    leftWeightContainer.style.top = `${lever.offsetTop}px`;
-
     rightWeightContainer.style.left = `${rightWeightPosX}px`;
-    rightWeightContainer.style.top = `${lever.offsetTop}px`;
+    leftWeightContainer.style.top = `${leverY}px`;
+    rightWeightContainer.style.top = `${leverY}px`;
 
+    // 실 길이: 추 길이와 정확히 맞춤
+    leftString.style.height = `${leftHeight}px`;
+    rightString.style.height = `${rightHeight}px`;
+
+    // 추 크기 및 텍스트
     leftWeight.style.width = '30px';
     leftWeight.style.height = `${leftHeight}px`;
     leftWeight.textContent = `${leftMassVal}g`;
@@ -761,15 +770,7 @@ T<!DOCTYPE html>
     rightWeight.style.height = `${rightHeight}px`;
     rightWeight.textContent = `${rightMassVal}g`;
 
-// 실의 길이를 추 높이에 맞게 조절
-leftString.style.height = `${leftHeight}px`;
-rightString.style.height = `${rightHeight}px`;
-
-// 컨테이너 위치도 지레 중심에 고정 (이미 잘 돼 있는 줄 알지만 다시 명시)
-leftWeightContainer.style.top = `${lever.offsetTop + lever.offsetHeight / 2}px`;
-rightWeightContainer.style.top = `${lever.offsetTop + lever.offsetHeight / 2}px`;
-
-
+    // 시각화 업데이트
     updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
 }
 
