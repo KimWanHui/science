@@ -981,16 +981,6 @@ rightString.style.top = `${leverY}px`;
         rotationAngle = Math.min(Math.abs(totalTorque) * 50, maxAngle) * Math.sign(totalTorque);
     }
 
-    // ✅ translate 제거
-    lever.style.transform = `rotate(${rotationAngle}deg)`;
-
-    // 추들도 같이 회전
-    const leftWeightContainer = document.getElementById('left-weight-container');
-    const rightWeightContainer = document.getElementById('right-weight-container');
-
-    leftWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
-    rightWeightContainer.style.transform = `rotate(${rotationAngle}deg)`;
-}
             
     
         // 실험 기록 추가 함수
