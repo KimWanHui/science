@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>빗면 위 등가속도 운동 시뮬레이션</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f5f7fa; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { background: #34495e; color: white; padding: 20px; border-radius: 10px; text-align: center; }
+    h1 { font-size: 2rem; }
+    .simulation-container { height: 300px; background: #eee; margin: 20px 0; position: relative; }
+    .inclined-plane { position: absolute; height: 10px; width: 80%; background: #bbb; top: 50px; left: 50px; transform-origin: top left; }
+    .cart { position: absolute; width: 50px; height: 30px; background: #3498db; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 5px; transform-origin: center; }
+    .controls { background: #fff; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type=range] { width: 100%; }
+    .mass-options { display: flex; gap: 10px; margin-top: 10px; }
+    .mass-option { flex: 1; padding: 10px; border: 2px solid #ccc; text-align: center; border-radius: 5px; cursor: pointer; }
+    .mass-option.selected { background: #3498db; color: white; border-color: #3498db; }
+    .btn-primary, .btn-secondary { padding: 10px 15px; border: none; border-radius: 5px; color: white; cursor: pointer; }
+    .btn-primary { background: #3498db; }
+    .btn-secondary { background: #2ecc71; }
+    .data-analysis { background: white; border-radius: 10px; padding: 20px; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
+    th { background: #34495e; color: white; }
+    .feedback { margin-top: 15px; padding: 10px; border-radius: 5px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>빗면 위 등가속도 운동 시뮬레이션</h1>
+      <div>"물체에 작용하는 알짜힘과 가속도의 관계를 탐구한다" - 물리학 I</div>
+    </header>
+
+    <div class="simulation-container">
+      <div class="inclined-plane"></div>
+      <div class="cart">0.5kg</div>
+    </div>
+
+    <div class="controls">
+      <label for="angle-slider">빗면 각도: <span id="angle-value">15°</span></label>
+      <input type="range" id="angle-slider" min="5" max="30" value="15"/>
+      
+      <label>질량 선택:</label>
+      <div class="mass-options">
+        <div class="mass-option" data-mass="0.2">0.2kg</div>
+        <div class="mass-option selected" data-mass="0.5">0.5kg</div>
+        <div class="mass-option" data-mass="1.0">1.0kg</div>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <button id="start-btn" class="btn-primary">실험 시작</button>
+        <button id="reset-btn" class="btn-secondary">초기화</button>
+      </div>
+    </div>
+
+    <div class="prediction-container">
+      <h3>예상 가속도는?</h3>
+      <input type="number" id="prediction-input" step="0.01" placeholder="예: 2.5"/>
+      <button id="check-prediction" class="btn-primary" style="margin-left: 10px;">확인</button>
+      <div id="prediction-feedback" class="feedback"></div>
+    </div>
+
+    <div class="data-analysis">
+      <h2>실험 기록</h2>
+      <table id="log-table">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>각도(°)</th>
+            <th>질량(kg)</th>
+            <th>이론 가속도</th>
+            <th>측정 가속도</th>
+            <th>이론 힘</th>
+            <th>측정 힘</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+<script>
+const g = 9.8;
+let angle = 15;
+let mass = 0.5;
+let isRunning = false;
+let startTime;
+let animationId;
+
+let timeData = [], positionData = [], velocityData = [], accelerationData = [];
+let experimentLogs = [];
+
+const plane = document.querySelector('.inclined-plane');
+const cart = document.querySelector('.cart');
+const angleSlider = document.getElementById('angle-slider');
+const angleValue = document.getElementById('angle-value');
+const massOptions = document.querySelectorAll('.mass-option');
+const startBtn = document.getElementById('start-btn');
+const resetBtn = document.getElementById('reset-btn');
+const predictionInput = document.getElementById('prediction-input');
+const checkPredictionBtn = document.getElementById('check-prediction');
+const predictionFeedback = document.getElementById('prediction-feedback');
+const measuredAcceleration = document.createElement('div');
+const measuredForce = document.createElement('div');
+
+angleSlider.addEventListener('input', () => {
+  angle = parseInt(angleSlider.value);
+  angleValue.textContent = angle + '°';
+  updatePlaneAngle();
+});
+
+massOptions.forEach(opt => {
+  opt.addEventListener('click', () => {
+    massOptions.forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    mass = parseFloat(opt.dataset.mass);
+    cart.textContent = `${mass}kg`;
+  });
+});
+
+startBtn.addEventListener('click', () => {
+  if (!isRunning) startExperiment();
+  else stopExperiment();
+});
+
+resetBtn.addEventListener('click', resetExperiment);
+
+checkPredictionBtn.addEventListener('click', () => {
+  const prediction = parseFloat(predictionInput.value);
+  if (isNaN(prediction)) return;
+  const theoretical = g * Math.sin(angle * Math.PI / 180);
+  const percentError = Math.abs((prediction - theoretical) / theoretical) * 100;
+  const emoji = getErrorCauseEmoji(percentError);
+  predictionFeedback.style.display = 'block';
+  predictionFeedback.innerHTML = `<strong>오차율:</strong> ${percentError.toFixed(1)}%<br><span style="font-size:1.2rem;">${emoji}</span>`;
+});
+
+function getErrorCauseEmoji(percentError) {
+  if (percentError < 1) return '✅ 정확함';
+  if (percentError < 2) return '🌬 약한 바람 영향';
+  return '🌬🛞 바람 + 마찰력 영향';
+}
+
+function updatePlaneAngle() {
+  plane.style.transform = `rotate(${angle}deg)`;
+  cart.style.left = '50px';
+  cart.style.top = `${50 - cart.offsetHeight / 2}px`;
+  cart.style.transform = `rotate(${angle}deg)`;
+}
+
+function startExperiment() {
+  isRunning = true;
+  startBtn.textContent = '중지';
+  startBtn.classList.remove('btn-primary');
+  startBtn.classList.add('btn-secondary');
+  startTime = Date.now();
+  animateCart();
+}
+
+function stopExperiment() {
+  isRunning = false;
+  startBtn.textContent = '실험 시작';
+  startBtn.classList.remove('btn-secondary');
+  startBtn.classList.add('btn-primary');
+  cancelAnimationFrame(animationId);
+
+  const aTheory = g * Math.sin(angle * Math.PI / 180);
+  const fTheory = mass * aTheory;
+
+  const errorRate = (Math.random() * 3) / 100;
+  const direction = Math.random() < 0.5 ? -1 : 1;
+  const aMeasured = aTheory * (1 + direction * errorRate);
+  const fMeasured = mass * aMeasured;
+  const percentError = Math.abs((aMeasured - aTheory) / aTheory) * 100;
+
+  const emoji = getErrorCauseEmoji(percentError);
+  predictionFeedback.innerHTML = `
+    <strong>이론값:</strong> ${aTheory.toFixed(2)} m/s²<br>
+    <strong>측정값:</strong> ${aMeasured.toFixed(2)} m/s²<br>
+    <strong>오차율:</strong> ${percentError.toFixed(1)}%<br>
+    <span style="font-size:1.2rem;">${emoji}</span>`;
+  predictionFeedback.style.display = 'block';
+
+  experimentLogs.push({
+    time: new Date().toLocaleTimeString(),
+    angle,
+    mass,
+    theoreticalAcceleration: aTheory.toFixed(2),
+    measuredAcceleration: aMeasured.toFixed(2),
+    theoreticalForce: fTheory.toFixed(2),
+    measuredForce: fMeasured.toFixed(2)
+  });
+  updateLogTable();
+}
+
+function animateCart() {
+  if (!isRunning) return;
+  const t = (Date.now() - startTime) / 1000;
+  const a = g * Math.sin(angle * Math.PI / 180);
+  const d = 0.5 * a * t * t;
+  const limit = 400;
+  const px = Math.min(d * 80, limit);
+  const rad = angle * Math.PI / 180;
+  const x = 50 + px * Math.cos(rad);
+  const y = 50 - cart.offsetHeight / 2 + px * Math.sin(rad);
+  cart.style.left = `${x}px`;
+  cart.style.top = `${y}px`;
+  if (px >= limit) {
+    stopExperiment();
+    return;
+  }
+  animationId = requestAnimationFrame(animateCart);
+}
+
+function resetExperiment() {
+  stopExperiment();
+  updatePlaneAngle();
+  predictionInput.value = '';
+  predictionFeedback.style.display = 'none';
+}
+
+function updateLogTable() {
+  const tbody = document.querySelector('#log-table tbody');
+  tbody.innerHTML = '';
+  experimentLogs.forEach(log => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${log.time}</td>
+      <td>${log.angle}</td>
+      <td>${log.mass}</td>
+      <td>${log.theoreticalAcceleration}</td>
+      <td>${log.measuredAcceleration}</td>
+      <td>${log.theoreticalForce}</td>
+      <td>${log.measuredForce}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+window.addEventListener('load', () => {
+  updatePlaneAngle();
+  cart.textContent = `${mass}kg`;
+});
+</script>
+</body>
+</html>
