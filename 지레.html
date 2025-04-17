@@ -135,15 +135,18 @@
             z-index: 8;
         }
         
-.weight-string {
-    width: 2px;
-    background-color: #000;
-    height: 80px;
-    margin: 0;
-    padding: 0;
-    transform-origin: top center; /* ✅ 추가 */
-    transition: transform 0.5s ease, height 0.5s ease; /* ✅ 부드러운 길이 변화 */
-}
+ .weight-string {
+      width: 2px;
+      background-color: #000;
+      margin: 0;
+      padding: 0;
+      transform-origin: top center;
+      transition: transform 0.5s ease, height 0.5s ease;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
         
         .weight {
             width: 30px;
@@ -719,7 +722,7 @@
         newQuestionBtn.addEventListener('click', generateNewQuestion);
         
         // 추 위치 업데이트 함수
-          function updateWeightPositions() {
+ function updateWeightPositions() {
       const leverWidth = lever.offsetWidth;
       const leverHeight = lever.offsetHeight;
       const leverTop = lever.offsetTop;
@@ -752,6 +755,7 @@
       const rightString = document.getElementById('right-string');
 
       const leverTopOffset = leverTop - leverHeight / 2 + leverHeight;
+
       leftWeightContainer.style.left = `${leftWeightPosX}px`;
       leftWeightContainer.style.top = `${leverTopOffset}px`;
 
@@ -769,8 +773,16 @@
       leftString.style.height = `80px`;
       rightString.style.height = `80px`;
 
+      leftString.style.top = '0';
+      leftString.style.left = '50%';
+      leftString.style.transform = 'translateX(-50%)';
+
+      rightString.style.top = '0';
+      rightString.style.left = '50%';
+      rightString.style.transform = 'translateX(-50%)';
+
       updateVisualizations(leftWeightPosX, rightWeightPosX, leftAngleVal, rightAngleVal, fulcrumPosX);
-    }
+    }        
         
         // 회전축 위치 업데이트 함수
         function updateFulcrumPosition(offset) {
