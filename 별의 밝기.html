@@ -79,8 +79,6 @@
 <h1 style="font-size: 26px; color: #ffffff;">
    별의 밝기와 거리
   </h1>
-
-
 <div class="star-container">
 <div class="panel">
 <div class="star-visual">
@@ -95,7 +93,7 @@
       </span>
       (상대크기)
      </label>
-<input id="radius" max="100" min="10" step="1" type="range" value="50"/>
+<input id="radius" max="100" min="10" oninput="updateDisplay()" step="1" type="range" value="50"/>
 </div>
 <div class="slider-group">
 <label for="temperature">
@@ -104,7 +102,7 @@
        5000
       </span>
 </label>
-<input id="temperature" max="20000" min="500" step="100" type="range" value="5000"/>
+<input id="temperature" max="20000" min="500" oninput="updateDisplay()" step="100" type="range" value="5000"/>
 </div>
 </div>
 <div class="panel">
@@ -115,7 +113,7 @@
        1.0
       </span>
 </label>
-<input id="distance" max="10" min="0.1" step="0.1" type="range" value="1"/>
+<input id="distance" max="10" min="0.1" oninput="updateDisplay()" step="0.1" type="range" value="1"/>
 </div>
 <p id="luminosity">
      광도:
@@ -125,87 +123,91 @@
     </p>
 </div>
 </div>
+
+
 <script>
-   const star = document.getElementById('star');
-    const radiusInput = document.getElementById('radius');
-    const temperatureInput = document.getElementById('temperature');
-    const distanceInput = document.getElementById('distance');
+  const star = document.getElementById('star');
+  const radiusInput = document.getElementById('radius');
+  const temperatureInput = document.getElementById('temperature');
+  const distanceInput = document.getElementById('distance');
 
-    const radiusLabel = document.getElementById('radiusLabel');
-    const temperatureLabel = document.getElementById('temperatureLabel');
-    const distanceLabel = document.getElementById('distanceLabel');
-    const luminosityText = document.getElementById('luminosity');
-    const apparentText = document.getElementById('apparent');
+  const radiusLabel = document.getElementById('radiusLabel');
+  const temperatureLabel = document.getElementById('temperatureLabel');
+  const distanceLabel = document.getElementById('distanceLabel');
+  const luminosityText = document.getElementById('luminosity');
+  const apparentText = document.getElementById('apparent');
 
-    const STEFAN_BOLTZMANN = 5.67e-8;
-    const SOLAR_RADIUS = 50;
-    const SOLAR_TEMP = 5778;
+  const STEFAN_BOLTZMANN = 5.67e-8;
+  const SOLAR_RADIUS = 50;
+  const SOLAR_TEMP = 5778;
 
-    function calculateLuminosity(r, t) {
-      const radiusInMeters = r * 1e-2;
-      return 4 * Math.PI * Math.pow(radiusInMeters, 2) * STEFAN_BOLTZMANN * Math.pow(t, 4);
+  function calculateLuminosity(r, t) {
+    const radiusInMeters = r * 1e-2;
+    return 4 * Math.PI * Math.pow(radiusInMeters, 2) * STEFAN_BOLTZMANN * Math.pow(t, 4);
+  }
+
+  function getLuminosityRatio(r, t) {
+    const objectLuminosity = calculateLuminosity(r, t);
+    const solarLuminosity = calculateLuminosity(SOLAR_RADIUS, SOLAR_TEMP);
+    return objectLuminosity / solarLuminosity;
+  }
+
+  function getApparentLuminosityRatio(r, t, d) {
+    return getLuminosityRatio(r, t) / (d * d);
+  }
+
+  function getColor(t) {
+    if (t >= 30000) return "#90c3ff";  // O형
+    if (t >= 10000) return "#b5d4ff";  // B형
+    if (t >= 7500)  return "#ffffff";  // A형
+    if (t >= 6000)  return "#fff4cc";  // F형
+    if (t >= 5200)  return "#ffdd88";  // G형
+    if (t >= 3700)  return "#ffbb66";  // K형
+    return "#ff6666";                  // M형
+  }
+
+  function updateDisplay() {
+    const r = parseFloat(radiusInput.value);
+    const t = parseFloat(temperatureInput.value);
+    const d = parseFloat(distanceInput.value);
+
+    radiusLabel.textContent = r;
+    temperatureLabel.textContent = t;
+    distanceLabel.textContent = d.toFixed(1);
+
+    const lum = getLuminosityRatio(r, t).toExponential(2);
+    const appLum = getApparentLuminosityRatio(r, t, d).toExponential(2);
+
+    // 밝기 계산 (선형 변화)
+    let apparent = 0.3 + (10 - d) * 0.07;
+    apparent = Math.min(1.0, Math.max(0.4, apparent));
+
+    const color = getColor(t);
+    const size = r * 2;
+
+    star.style.width = `${size}px`;
+    star.style.height = `${size}px`;
+    
+    if (apparent < 0.45 || t < 1000) {
+      star.style.backgroundColor = "#000000";
+    } else {
+      star.style.backgroundColor = color;
     }
 
-    function getLuminosityRatio(r, t) {
-      const objectLuminosity = calculateLuminosity(r, t);
-      const solarLuminosity = calculateLuminosity(SOLAR_RADIUS, SOLAR_TEMP);
-      return objectLuminosity / solarLuminosity;
-    }
+    star.style.opacity = apparent;
 
-    function getApparentLuminosityRatio(r, t, d) {
-      return getLuminosityRatio(r, t) / (d * d);
-    }
+    const shadowSize = 20 + 30 * apparent;
+    star.style.boxShadow = `0 0 ${shadowSize * 0.5}px ${shadowSize * 0.25}px ${color}`;
 
-    function getApparentBrightness(r, t, d) {
-      const lum = getLuminosityRatio(r, t);
-      const brightness = Math.log(lum + 1) / Math.log(calculateLuminosity(SOLAR_RADIUS, SOLAR_TEMP) + 1);
-      
-const referenceBrightness = brightness / Math.pow(0.1, 2.5);  // 기준 거리 1AU
+    luminosityText.textContent = `광도: ${lum} L☉`;
+    apparentText.textContent = `겉보기 광도: ${appLum} L☉`;
+  }
 
-let apparent = 0.3 + (10 - d) * 0.07;
-if (apparent > 1.0) apparent = 1.0;
+  radiusInput.oninput = updateDisplay;
+  temperatureInput.oninput = updateDisplay;
+  distanceInput.oninput = updateDisplay;
 
-
-      return apparent; // 최소값 0.1 보장
-    }
-
-    function getColor(t) {
-      if (t < 700) return "black";
-      if (t < 3500) return "#fbbf24";
-      if (t < 6000) return "#ffffff";
-      return "#60a5fa";
-    }
-
-    function updateDisplay() {
-      const r = parseFloat(radiusInput.value);
-      const t = parseFloat(temperatureInput.value);
-      const d = parseFloat(distanceInput.value);
-
-      radiusLabel.textContent = r;
-      temperatureLabel.textContent = t;
-      distanceLabel.textContent = d.toFixed(1);
-
-      const lum = getLuminosityRatio(r, t).toExponential(2);
-      const appLum = getApparentLuminosityRatio(r, t, d).toExponential(2);
-      const apparentBrightness = getApparentBrightness(r, t, d);
-
-      luminosityText.textContent = `광도: ${lum} L☉`;
-      apparentText.textContent = `겉보기 광도: ${appLum} L☉`;
-
-      star.style.width = `${r * 2}px`;
-      star.style.height = `${r * 2}px`;
-      star.style.backgroundColor = getColor(t);
-      star.style.opacity = apparentBrightness;
-      
-const shadowSize = 50 * apparent;
-star.style.boxShadow = `0 0 ${Math.max(15, r * apparentBrightness * 2)}px ${Math.max(10, r * apparentBrightness * 1.5)}px ${getColor(t)}`;
-    }
-
-    radiusInput.addEventListener('input', updateDisplay);
-    temperatureInput.addEventListener('input', updateDisplay);
-    distanceInput.addEventListener('input', updateDisplay);
-
-    updateDisplay();
-  </script>
+  window.onload = updateDisplay;
+</script>
 </body>
 </html>
