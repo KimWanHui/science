@@ -565,6 +565,63 @@
                 transform-origin: center top;
             }
         }
+        @media (max-width: 768px) {
+    h1 {
+        font-size: 22px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .control-group {
+        min-width: 100%;
+    }
+
+    .simulation-container {
+        height: auto;
+        min-height: 600px;
+    }
+
+    .jagyeongnu-structure {
+        transform: scale(0.9);
+        transform-origin: top center;
+    }
+
+    .time-board {
+        left: 50%;
+        transform: translateX(-50%);
+        top: auto;
+        bottom: 30px;
+    }
+
+    .timer-display {
+        right: 50%;
+        transform: translateX(50%);
+        bottom: 0;
+    }
+
+    .results-area {
+        overflow-x: auto;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    .feedback {
+        font-size: 13px;
+    }
+}
     </style>
 </head>
 <body>
