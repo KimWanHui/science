@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>빛의 세기에 따른 식물 생장 시뮬레이션</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .slider-container {
+            background-color: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider-container span {
+            margin: 0 10px;
+            color: #666;
+        }
+        
+        input[type="range"] {
+            flex-grow: 1;
+        }
+        
+        .day-display {
+            text-align: center;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3e8e41;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .simulation-area {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .plant-container {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .container-header {
+            padding: 10px;
+            text-align: center;
+            background-color: #f3f3f3;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .plant-area {
+            height: 300px;
+            position: relative;
+            background-color: #f9f9f9;
+        }
+        
+        .sun {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .strong-sun {
+            background-color: #FFD700;
+            box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.5);
+        }
+        
+        .weak-sun {
+            background-color: #FFEB9C;
+            box-shadow: 0 0 10px 2px rgba(255, 235, 156, 0.5);
+        }
+        
+        .plant {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .stem {
+            width: 10px;
+            height: 100px;
+            background-color: #8B4513;
+            margin: 0 auto;
+        }
+        
+        .leaf {
+            position: absolute;
+            background-color: #4CAF50;
+            border-radius: 50% 50% 50% 50%;
+            transform-origin: center;
+        }
+        
+        .soil {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30px;
+            background-color: #8B4513;
+        }
+        
+        .plant-stats {
+            padding: 10px;
+            font-size: 14px;
+            border-top: 1px solid #ddd;
+            background-color: #fff;
+        }
+        
+        .educational-content {
+            background-color: #E3F2FD;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .educational-content h3 {
+            margin-top: 0;
+            color: #0D47A1;
+        }
+        
+        .question-section {
+            background-color: #FFF8E1;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #FFC107;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #E8F5E9;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .curriculum-info {
+            background-color: #E8F5E9;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border-left: 4px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>식물 생장 시뮬레이션</h1>
+    
+    <div class="curriculum-info">
+        <p><strong>교육과정:</strong> 중학교 1학년 / 과학</p>
+        <p><strong>단원명:</strong> 생물의 다양성과 생태계</p>
+        <p><strong>성취기준:</strong> 중1 과학 4-01 "식물이 생장하는 데 필요한 조건을 탐구하고, 빛과 식물 생장과의 관계를 설명한다."</p>
+    </div>
+    
+    <div class="slider-container">
+        <span>일차 0</span>
+        <input type="range" id="day-slider" min="0" max="30" value="30">
+        <span>일차 30</span>
+    </div>
+    
+    <div class="day-display">현재 일차: <span id="current-day">30</span></div>
+    
+    <div class="button-container">
+        <button id="growth-btn">성장 완료</button>
+        <button id="reset-btn">초기화</button>
+    </div>
+    
+    <div class="progress-bar" id="progress-bar" style="width: 100%;"></div>
+    
+    <div class="simulation-area">
+        <div class="plant-container">
+            <div class="container-header">강한 빛</div>
+            <div class="plant-area">
+                <div class="sun strong-sun"></div>
+                <div class="plant" id="strong-plant">
+                    <div id="strong-leaves-container"></div>
+                    <div class="stem" id="strong-stem"></div>
+                </div>
+                <div class="soil"></div>
+            </div>
+            <div class="plant-stats" id="strong-stats">높이: 12cm | 잎 크기: 2.2배 | 엽록소 농도: 100%</div>
+        </div>
+        
+        <div class="plant-container">
+            <div class="container-header">약한 빛</div>
+            <div class="plant-area">
+                <div class="sun weak-sun"></div>
+                <div class="plant" id="weak-plant">
+                    <div id="weak-leaves-container"></div>
+                    <div class="stem" id="weak-stem"></div>
+                </div>
+                <div class="soil"></div>
+            </div>
+            <div class="plant-stats" id="weak-stats">높이: 9cm | 잎 크기: 1.4배 | 엽록소 농도: 134%</div>
+        </div>
+    </div>
+    
+    <div class="educational-content">
+        <h3>관찰 결과</h3>
+        <div id="observation-text">
+            시뮬레이션을 시작하려면 '성장 진행' 버튼을 클릭하세요.
+        </div>
+    </div>
+    
+    <div class="question-section" id="question-section" style="display: none;">
+        <h3>생각해 볼 문제</h3>
+        <p>1. 약한 빛에서 자란 식물의 잎은 왜 더 짙은 녹색을 띠고 있을까요?</p>
+        <p>2. 강한 빛에서 자란 식물의 잎이 햇빛 쪽으로 향하는 현상을 무엇이라고 할까요?</p>
+        <p>3. 빛의 세기에 따라 식물의 높이와 잎 크기가 달라지는 이유는 무엇일까요?</p>
+        
+        <textarea id="answer-area" rows="4" style="width: 100%; margin-top: 10px; padding: 8px;" placeholder="여기에 답변을 작성해보세요."></textarea>
+        <button id="submit-answer" style="margin-top: 10px;">답변 제출</button>
+        
+        <div class="feedback" id="feedback">
+            <p><strong>피드백:</strong> <span id="feedback-text"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        // DOM 요소 
+        const daySlider = document.getElementById('day-slider');
+        const currentDayDisplay = document.getElementById('current-day');
+        const growthBtn = document.getElementById('growth-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const observationText = document.getElementById('observation-text');
+        const questionSection = document.getElementById('question-section');
+        const submitAnswerBtn = document.getElementById('submit-answer');
+        const feedbackDiv = document.getElementById('feedback');
+        const feedbackText = document.getElementById('feedback-text');
+        
+        // 식물 요소
+        const strongStem = document.getElementById('strong-stem');
+        const weakStem = document.getElementById('weak-stem');
+        const strongLeavesContainer = document.getElementById('strong-leaves-container');
+        const weakLeavesContainer = document.getElementById('weak-leaves-container');
+        
+        // 상태 표시 요소
+        const strongStats = document.getElementById('strong-stats');
+        const weakStats = document.getElementById('weak-stats');
+        
+        // 성장 모델
+        const growthModel = {
+            strongLight: {
+                height: day => Math.min(5 + day * 0.7, 25),
+                leafSize: day => Math.min(1 + day * 0.04, 2.2),
+                chlorophyll: day => Math.min(30 + day * 2.3, 100)
+            },
+            weakLight: {
+                height: day => Math.min(5 + day * 0.25, 12),
+                leafSize: day => Math.min(1 + day * 0.015, 1.4),
+                chlorophyll: day => Math.min(30 + day * 3.5, 134)
+            }
+        };
+        
+        // 현재 상태
+        let currentDay = 30; // 시작을 30일차로 설정
+        let isGrowing = false;
+        let growthInterval;
+        
+        // 슬라이더 이벤트
+        daySlider.addEventListener('input', function() {
+            currentDay = parseInt(this.value);
+            updateSimulation();
+        });
+        
+        // 성장 완료 버튼 이벤트
+        growthBtn.addEventListener('click', function() {
+            if (isGrowing) {
+                clearInterval(growthInterval);
+                this.textContent = '성장 완료';
+                isGrowing = false;
+                return;
+            }
+            
+            // 이미 최대 성장에 도달했으면 초기화
+            if (currentDay >= 30) {
+                resetSimulation();
+            }
+            
+            isGrowing = true;
+            this.textContent = '일시 정지';
+            
+            growthInterval = setInterval(() => {
+                if (currentDay < 30) {
+                    currentDay++;
+                    daySlider.value = currentDay;
+                    updateSimulation();
+                } else {
+                    clearInterval(growthInterval);
+                    growthBtn.textContent = '성장 완료';
+                    isGrowing = false;
+                    showQuestionSection();
+                }
+            }, 100);
+        });
+        
+        // 초기화 버튼 이벤트
+        resetBtn.addEventListener('click', resetSimulation);
+        
+        // 답변 제출 버튼 이벤트
+        submitAnswerBtn.addEventListener('click', function() {
+            const answer = document.getElementById('answer-area').value.trim();
+            if (answer) {
+                const feedback = evaluateAnswer(answer);
+                feedbackText.innerHTML = feedback;
+                feedbackDiv.style.display = 'block';
+            } else {
+                feedbackText.innerHTML = '답변을 입력해주세요.';
+                feedbackDiv.style.display = 'block';
+            }
+        });
+        
+        // 시뮬레이션 업데이트 함수
+        function updateSimulation() {
+            // 현재 일수 표시 업데이트
+            currentDayDisplay.textContent = currentDay;
+            
+            // 프로그레스 바 업데이트
+            progressBar.style.width = (currentDay / 30 * 100) + '%';
+            
+            // 강한 빛 식물 업데이트
+            const strongHeight = growthModel.strongLight.height(currentDay);
+            const strongLeafSize = growthModel.strongLight.leafSize(currentDay);
+            const strongChlorophyll = growthModel.strongLight.chlorophyll(currentDay);
+            
+            strongStem.style.height = (strongHeight * 4) + 'px';
+            
+            // 약한 빛 식물 업데이트
+            const weakHeight = growthModel.weakLight.height(currentDay);
+            const weakLeafSize = growthModel.weakLight.leafSize(currentDay);
+            const weakChlorophyll = growthModel.weakLight.chlorophyll(currentDay);
+            
+            weakStem.style.height = (weakHeight * 4) + 'px';
+            
+            // 잎 업데이트
+            updateLeaves(strongLeavesContainer, strongLeafSize, calculateLeafColor(strongChlorophyll), true);
+            updateLeaves(weakLeavesContainer, weakLeafSize, calculateLeafColor(weakChlorophyll), false);
+            
+            // 상태 정보 업데이트
+            strongStats.textContent = `높이: ${Math.round(strongHeight)}cm | 잎 크기: ${strongLeafSize.toFixed(1)}배 | 엽록소 농도: ${Math.round(strongChlorophyll)}%`;
+            weakStats.textContent = `높이: ${Math.round(weakHeight)}cm | 잎 크기: ${weakLeafSize.toFixed(1)}배 | 엽록소 농도: ${Math.round(weakChlorophyll)}%`;
+            
+            // 관찰 결과 업데이트
+            updateObservation();
+            
+            // 30일 도달 시 질문 섹션 표시
+            if (currentDay >= 30) {
+                showQuestionSection();
+            } else {
+                questionSection.style.display = 'none';
+            }
+        }
+        
+        // 잎 업데이트 함수 - 잎의 끝이 위를 향하도록 수정
+        function updateLeaves(container, size, color, isStrong) {
+            // 기존 잎 제거
+            container.innerHTML = '';
+            
+            // 새 잎 생성
+            const baseSize = isStrong ? 60 : 40; // 강한 빛은 원래 큰 잎
+            
+            // 줄기 높이 가져오기
+            const stemHeight = isStrong ? 
+                parseInt(strongStem.style.height || '100px') : 
+                parseInt(weakStem.style.height || '100px');
+            
+            // 줄기 컨테이너 추가
+            const stemContainer = document.createElement('div');
+            stemContainer.style.position = 'relative';
+            stemContainer.style.height = '100%';
+            container.appendChild(stemContainer);
+            
+            // 왼쪽 잎 - 끝이 위를 향하게
+            const leftLeaf = document.createElement('div');
+            leftLeaf.className = 'leaf';
+            leftLeaf.style.width = (baseSize * size) + 'px';
+            leftLeaf.style.height = (baseSize / 2 * size) + 'px';
+            leftLeaf.style.backgroundColor = color;
+            leftLeaf.style.position = 'absolute';
+            leftLeaf.style.bottom = stemHeight + 'px'; // 줄기 끝에 위치
+            leftLeaf.style.right = '10px'; // 줄기에 붙게 설정
+            leftLeaf.style.transformOrigin = 'right bottom';
+            leftLeaf.style.transform = 'rotate(20deg)'; // 끝이 위로 향하게
+            stemContainer.appendChild(leftLeaf);
+            
+            // 오른쪽 잎 - 끝이 위를 향하게
+            const rightLeaf = document.createElement('div');
+            rightLeaf.className = 'leaf';
+            rightLeaf.style.width = (baseSize * size) + 'px';
+            rightLeaf.style.height = (baseSize / 2 * size) + 'px';
+            rightLeaf.style.backgroundColor = color;
+            rightLeaf.style.position = 'absolute';
+            rightLeaf.style.bottom = stemHeight + 'px'; // 줄기 끝에 위치
+            rightLeaf.style.left = '10px'; // 줄기에 붙게 설정
+            rightLeaf.style.transformOrigin = 'left bottom';
+            rightLeaf.style.transform = 'rotate(-20deg)'; // 끝이 위로 향하게
+            stemContainer.appendChild(rightLeaf);
+        }
+        
+        // 관찰 결과 업데이트
+        function updateObservation() {
+            if (currentDay === 0) {
+                observationText.innerHTML = '시뮬레이션을 시작하려면 \'성장 진행\' 버튼을 클릭하세요.';
+                return;
+            }
+            
+            const strongHeight = growthModel.strongLight.height(currentDay);
+            const weakHeight = growthModel.weakLight.height(currentDay);
+            const strongLeafSize = growthModel.strongLight.leafSize(currentDay);
+            const weakLeafSize = growthModel.weakLight.leafSize(currentDay);
+            const strongChlorophyll = growthModel.strongLight.chlorophyll(currentDay);
+            const weakChlorophyll = growthModel.weakLight.chlorophyll(currentDay);
+            
+            let observation = `<p><strong>${currentDay}일차 관찰 결과:</strong></p>`;
+            
+            if (currentDay >= 5) {
+                observation += `<p>- 강한 빛에서 자란 식물은 약한 빛에서 자란 식물보다 높이가 ${(strongHeight - weakHeight).toFixed(1)}cm 더 큽니다.</p>`;
+            }
+            
+            if (currentDay >= 10) {
+                observation += `<p>- 강한 빛에서 자란 식물의 잎은 약한 빛보다 ${(strongLeafSize - weakLeafSize).toFixed(1)}배 더 큽니다.</p>`;
+                observation += `<p>- 약한 빛에서 자란 식물의 잎은 더 짙은 녹색을 띠며, 엽록소 농도가 ${(weakChlorophyll - strongChlorophyll).toFixed(0)}% 더 높습니다.</p>`;
+            }
+            
+            if (currentDay >= 15) {
+                observation += `<p>- 빛이 약한 환경에서는 식물이 제한된 빛을 최대한 활용하기 위해 엽록소 농도를 높이는 전략을 사용합니다. 이를 '음지 적응'이라고 합니다.</p>`;
+                observation += `<p>- 식물의 잎이 햇빛 쪽으로 향하는 현상을 '광향성'이라고 합니다. 이는 식물이 광합성에 필요한 빛을 최대한 받기 위한 적응 반응입니다.</p>`;
+            }
+            
+            if (currentDay >= 20) {
+                observation += `<p>- 강한 빛에서 자란 식물은 광합성이 활발하게 일어나 키가 더 크고 잎도 더 넓습니다. 반면, 약한 빛에서 자란 식물은 제한된 빛을 최대한 활용하기 위해 엽록소 농도를 높이는 전략을 보입니다.</p>`;
+            }
+            
+            if (currentDay === 30) {
+                observation += `<p>- 실험이 완료되었습니다. 빛의 세기가 식물 생장에 미치는 영향을 관찰해 볼 수 있었습니다. 아래 질문에 답변해보세요.</p>`;
+            }
+            
+            observationText.innerHTML = observation;
+        }
+        
+        // 질문 섹션 표시
+        function showQuestionSection() {
+            questionSection.style.display = 'block';
+            feedbackDiv.style.display = 'none';
+        }
+        
+        // 초기화 함수
+        function resetSimulation() {
+            clearInterval(growthInterval);
+            currentDay = 0;
+            isGrowing = false;
+            daySlider.value = 0;
+            growthBtn.textContent = '성장 완료';
+            questionSection.style.display = 'none';
+            feedbackDiv.style.display = 'none';
+            document.getElementById('answer-area').value = '';
+            updateSimulation();
+        }
+        
+        // 엽록소 농도에 따른 잎 색상 계산 함수
+        function calculateLeafColor(chlorophyllPercent) {
+            // 엽록소 농도가 증가할수록 더 진한 녹색으로 변경
+            const normalizedValue = Math.min(chlorophyllPercent / 134, 1); // 최대값 134%로 정규화
+            const greenBase = 175;
+            const greenMax = 76;
+            const green = Math.floor(greenBase - normalizedValue * (greenBase - greenMax));
+            
+            return `rgb(${Math.floor(76 - normalizedValue * 20)}, ${green}, ${Math.floor(40 - normalizedValue * 20)})`;
+        }
+        
+        // 답변 평가 함수
+        function evaluateAnswer(answer) {
+            // 키워드 검사
+            const keywords = ['엽록소', '광합성', '광향성', '적응', '생존 전략', '빛 흡수'];
+            let keywordCount = 0;
+            
+            keywords.forEach(keyword => {
+                if (answer.includes(keyword)) {
+                    keywordCount++;
+                }
+            });
+            
+            if (keywordCount >= 3 && answer.length > 80) {
+                return `훌륭한 답변입니다! 식물이 빛의 세기에 따라 어떻게 적응하는지 잘 이해하고 있습니다. 광합성, 엽록소 농도, 광향성 등의 개념을 정확히 활용했습니다.`;
+            } else if (keywordCount >= 2 && answer.length > 40) {
+                return `좋은 답변입니다. 빛과 식물 생장의 관계에 대한 기본 개념을 잘 이해하고 있습니다. 더 다양한 개념(광합성, 광향성, 엽록소 등)을 활용하면 더 좋겠습니다.`;
+            } else {
+                return `다시 한 번 생각해보세요. 답변이 짧거나 중요한 개념들을 놓치고 있습니다. 광합성, 엽록소, 광향성과 같은 핵심 개념을 포함시켜 보세요.`;
+            }
+        }
+        
+        // 페이지 로드 시
+        window.addEventListener('load', function() {
+            // 초기 시뮬레이션 설정
+            updateSimulation();
+            showQuestionSection(); // 30일차에 시작하므로 질문 섹션도 표시
+            
+            // 잎 컨테이너 스타일 설정
+            strongLeavesContainer.style.position = 'absolute';
+            strongLeavesContainer.style.width = '100%'; 
+            strongLeavesContainer.style.height = '100%';
+            
+            weakLeavesContainer.style.position = 'absolute';
+            weakLeavesContainer.style.width = '100%';
+            weakLeavesContainer.style.height = '100%';
+        });
+    </script>
+</body>
+</html>
