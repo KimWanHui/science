@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="utf-8"/>
+<title>
+   별의 물리적 모델 시뮬레이션
+  </title>
+<style>
+   body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(to right, #1a1a40, #1a2639);
+      color: #f0f0f0;
+      padding: 40px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 40px;
+    }
+    .star-container {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .panel {
+      background: #2a2a4a;
+      border-radius: 16px;
+      padding: 30px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      border: 1px solid #5e5ec7;
+    }
+    .star-visual {
+      height: 240px;
+      background: #000;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .star {
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    .slider-group {
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      font-size: 17px;
+      font-weight: bold;
+      color: #facc15;
+      margin-bottom: 6px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #ffd369;
+    }
+    p {
+      font-size: 15px;
+      color: #dddddd;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+<header style="margin-bottom: 30px; text-align: center;">
+<p style="font-size: 17px; color: #facc15; font-weight: bold;">
+    별은 왜 어떤 건 반짝이고, 어떤 건 희미할까요? 🤔<br/>
+    이 시뮬레이션을 통해 별의 크기와 온도, 거리 차이가<br/>
+    얼마나 밝게 보이게 만드는지 직접 확인해보세요!
+  </p>
+</header>
+<h1 style="font-size: 26px; color: #ffffff;">
+   별의 밝기와 거리
+  </h1>
+
+
+<div class="star-container">
+<div class="panel">
+<div class="star-visual">
+<div class="star" id="star" style="width:100px; height:100px; background-color:white;">
+</div>
+</div>
+<div class="slider-group">
+<label for="radius">
+      반지름:
+      <span id="radiusLabel">
+       50
+      </span>
+      (상대크기)
+     </label>
+<input id="radius" max="100" min="10" step="1" type="range" value="50"/>
+</div>
+<div class="slider-group">
+<label for="temperature">
+      표면 온도 (K):
+      <span id="temperatureLabel">
+       5000
+      </span>
+</label>
+<input id="temperature" max="20000" min="500" step="100" type="range" value="5000"/>
+</div>
+</div>
+<div class="panel">
+<div class="slider-group">
+<label for="distance">
+      거리 (천문단위 AU):
+      <span id="distanceLabel">
+       1.0
+      </span>
+</label>
+<input id="distance" max="10" min="0.1" step="0.1" type="range" value="1"/>
+</div>
+<p id="luminosity">
+     광도:
+    </p>
+<p id="apparent">
+     겉보기 광도:
+    </p>
+</div>
+</div>
+<script>
+   const star = document.getElementById('star');
+    const radiusInput = document.getElementById('radius');
+    const temperatureInput = document.getElementById('temperature');
+    const distanceInput = document.getElementById('distance');
+
+    const radiusLabel = document.getElementById('radiusLabel');
+    const temperatureLabel = document.getElementById('temperatureLabel');
+    const distanceLabel = document.getElementById('distanceLabel');
+    const luminosityText = document.getElementById('luminosity');
+    const apparentText = document.getElementById('apparent');
+
+    const STEFAN_BOLTZMANN = 5.67e-8;
+    const SOLAR_RADIUS = 50;
+    const SOLAR_TEMP = 5778;
+
+    function calculateLuminosity(r, t) {
+      const radiusInMeters = r * 1e-2;
+      return 4 * Math.PI * Math.pow(radiusInMeters, 2) * STEFAN_BOLTZMANN * Math.pow(t, 4);
+    }
+
+    function getLuminosityRatio(r, t) {
+      const objectLuminosity = calculateLuminosity(r, t);
+      const solarLuminosity = calculateLuminosity(SOLAR_RADIUS, SOLAR_TEMP);
+      return objectLuminosity / solarLuminosity;
+    }
+
+    function getApparentLuminosityRatio(r, t, d) {
+      return getLuminosityRatio(r, t) / (d * d);
+    }
+
+    function getApparentBrightness(r, t, d) {
+      const lum = getLuminosityRatio(r, t);
+      const brightness = Math.log(lum + 1) / Math.log(calculateLuminosity(SOLAR_RADIUS, SOLAR_TEMP) + 1);
+      
+const referenceBrightness = brightness / Math.pow(0.1, 2.5);  // 기준 거리 1AU
+
+let apparent = 0.3 + (10 - d) * 0.07;
+if (apparent > 1.0) apparent = 1.0;
+
+
+      return apparent; // 최소값 0.1 보장
+    }
+
+    function getColor(t) {
+      if (t < 700) return "black";
+      if (t < 3500) return "#fbbf24";
+      if (t < 6000) return "#ffffff";
+      return "#60a5fa";
+    }
+
+    function updateDisplay() {
+      const r = parseFloat(radiusInput.value);
+      const t = parseFloat(temperatureInput.value);
+      const d = parseFloat(distanceInput.value);
+
+      radiusLabel.textContent = r;
+      temperatureLabel.textContent = t;
+      distanceLabel.textContent = d.toFixed(1);
+
+      const lum = getLuminosityRatio(r, t).toExponential(2);
+      const appLum = getApparentLuminosityRatio(r, t, d).toExponential(2);
+      const apparentBrightness = getApparentBrightness(r, t, d);
+
+      luminosityText.textContent = `광도: ${lum} L☉`;
+      apparentText.textContent = `겉보기 광도: ${appLum} L☉`;
+
+      star.style.width = `${r * 2}px`;
+      star.style.height = `${r * 2}px`;
+      star.style.backgroundColor = getColor(t);
+      star.style.opacity = apparentBrightness;
+      
+const shadowSize = 50 * apparent;
+star.style.boxShadow = `0 0 ${Math.max(15, r * apparentBrightness * 2)}px ${Math.max(10, r * apparentBrightness * 1.5)}px ${getColor(t)}`;
+    }
+
+    radiusInput.addEventListener('input', updateDisplay);
+    temperatureInput.addEventListener('input', updateDisplay);
+    distanceInput.addEventListener('input', updateDisplay);
+
+    updateDisplay();
+  </script>
+</body>
+</html>
