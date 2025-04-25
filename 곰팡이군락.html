@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>곰팡이 마스터즈 - 환경 요인에 따른 곰팡이 생장 시뮬레이션</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts (Noto Sans KR) -->
+  <link href="https://cdn.jsdelivr.net/npm/@fonts/google@3.3.1/css?family=Noto+Sans+KR:400,700" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f7fafc; color: #22292f; }
+    .slider-label { min-width: 70px; }
+    .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; }
+    /* Prevent scroll for PDF export */
+    main, html, body { overflow-x: hidden; }
+  </style>
+</head>
+<body>
+  <main class="max-w-4xl mx-auto px-4 pt-8 pb-16 bg-white shadow-lg rounded-lg">
+    <header class="mb-10 border-b pb-6">
+      <div class="flex items-center">
+        <i class="fas fa-microscope text-indigo-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold tracking-tight">곰팡이 마스터즈</h1>
+      </div>
+      <p class="mt-2 text-lg text-gray-600">
+        <strong>실험 주제:</strong> 다양한 환경 조건에서 곰팡이의 성장 변화를 관찰하는 실험<br>
+        <strong>단원:</strong> 생물과 환경 (중학교 1학년 과학) / <strong>성취기준:</strong> 중1 과학 2-03<br>
+        <span class="text-gray-700">생물은 환경에 따라 다양한 형태로 적응하며, 환경이 생물의 생존에 미치는 영향을 설명할 수 있다.</span>
+      </p>
+    </header>
+
+    <!-- Step 1. 환경 변수 조작 영역 -->
+    <section class="mb-8 bg-gray-50 rounded p-6">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-sliders-h mr-2 text-indigo-500"></i>
+        실험 조건 조정
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="flex items-center mb-2" for="temperature">
+            <span class="slider-label text-sm">온도(°C):</span>
+            <span id="val-temperature" class="font-semibold ml-2">25</span>
+          </label>
+          <input type="range" id="temperature" min="5" max="40" value="25" step="1" class="w-full">
+        </div>
+        <div>
+          <label class="flex items-center mb-2" for="humidity">
+            <span class="slider-label text-sm">습도(%):</span>
+            <span id="val-humidity" class="font-semibold ml-2">70</span>
+          </label>
+          <input type="range" id="humidity" min="30" max="100" value="70" step="1" class="w-full">
+        </div>
+        <div>
+          <label class="flex items-center mb-2" for="nutrient">
+            <span class="slider-label text-sm">영양분:</span>
+          </label>
+          <select id="nutrient" class="w-full rounded border-gray-300 text-gray-800">
+            <option value="높음" selected>높음</option>
+            <option value="중간">중간</option>
+            <option value="낮음">낮음</option>
+          </select>
+        </div>
+        <div class="flex items-center space-x-3 mt-6 md:mt-0">
+          <button id="start-btn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 focus:outline-none">
+            <i class="fas fa-play mr-1"></i>실험 시작/재실행
+          </button>
+          <button id="save-btn" class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 focus:outline-none">
+            <i class="fas fa-save mr-1"></i>결과 저장
+          </button>
+          <button id="reset-btn" class="bg-gray-400 text-white px-3 py-2 rounded hover:bg-gray-500 focus:outline-none">
+            <i class="fas fa-redo mr-1"></i>초기화
+          </button>
+        </div>
+      </div>
+      <div class="mt-4 text-xs text-gray-500">
+        온도, 습도, 영양분 농도를 조절하여 곰팡이의 생장 변화를 실험해보세요. 실험을 여러 번 반복하여 조건별 생장 그래프를 비교할 수 있습니다.
+      </div>
+    </section>
+
+    <!-- Step 2. 곰팡이 생장 시각화 영역 -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-spa mr-2 text-green-500"></i>
+        곰팡이 군락 시각화 (<span id="sim-time" class="ml-1 font-bold text-indigo-700">0</span>일 경과)
+      </h2>
+      <div class="flex flex-col md:flex-row gap-6 md:items-start">
+        <!-- 곰팡이 애니메이션 구역 -->
+        <div class="w-full md:w-1/2 flex-shrink-0 flex flex-col items-center">
+          <canvas id="mold-canvas" width="300" height="300" class="border rounded-lg bg-gray-100 shadow-inner"></canvas>
+          <div class="flex mt-3 space-x-3 text-sm text-gray-700">
+            <div><span class="legend-dot" style="background:#5dbb63"></span>빠른 성장</div>
+            <div><span class="legend-dot" style="background:#b8e356"></span>평균 성장</div>
+            <div><span class="legend-dot" style="background:#dfe7b1"></span>느린 성장</div>
+          </div>
+          <div class="mt-2 text-xs text-gray-400">※ 퍼짐/색 변화는 성장 속도에 따라 달라집니다.</div>
+        </div>
+        <!-- 피드백/해설창 -->
+        <div class="w-full md:w-1/2 bg-gray-50 rounded-lg p-4 flex flex-col shadow">
+          <div class="mb-2 font-bold text-gray-700">실험 결과 피드백</div>
+          <div id="feedback" class="text-sm">
+            실험 조건을 조절하면, 곰팡이의 성장과 생장 모양이 어떻게 달라지는지 관찰할 수 있습니다.<br>
+            <span class="text-indigo-600">실험을 시작</span>해보세요!
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3. 생장 면적 그래프 영역 -->
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-chart-area mr-2 text-blue-500"></i>
+        곰팡이 생장 그래프 (면적 증가)
+      </h2>
+      <canvas id="areaChart" width="700" height="280"></canvas>
+      <div class="mt-2 text-xs text-gray-500">
+        X축: 시간(일 단위) / Y축: 곰팡이 군락의 면적(상대값)<br>
+        여러 조건의 실험 데이터를 저장하면, 기록된 실험 조건별로 그래프를 겹쳐 비교할 수 있습니다.
+      </div>
+      <!-- 실험 결과 조건 비교 리스트 -->
+      <div class="mt-4">
+        <div class="font-semibold mb-1">저장된 실험 결과</div>
+        <ul id="result-list" class="space-y-1 pl-2 text-sm"></ul>
+      </div>
+    </section>
+
+    <!-- 과학적 해설 및 개념 정리 -->
+    <section class="bg-blue-50 rounded-lg px-5 py-6">
+      <h2 class="text-lg font-bold mb-2 flex items-center">
+        <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+        과학적 배경 및 정리
+      </h2>
+      <div class="mb-1">
+        <strong>곰팡이 생장에 영향을 미치는 환경 요인:</strong>
+      </div>
+      <ul class="list-disc list-inside text-gray-700 mb-2">
+        <li><b>온도</b> — 곰팡이는 보통 25~30℃에서 가장 잘 자람. 낮거나 높은 온도에서는 성장 속도가 느려짐.</li>
+        <li><b>습도</b> — 습도가 높을수록 생장에 유리하며, 70% 이상일 때 빠르게 성장.</li>
+        <li><b>영양분</b> — 영양이 충분할수록 성장 속도가 빨라짐. 영양이 부족하면 느리게 성장.</li>
+      </ul>
+      <div class="text-gray-600 text-sm">
+        실제 곰팡이 실험에서는 위의 조건 이외에도 빛, 공기, 물질 종류 등 다양한 요인이 영향을 줄 수 있습니다.<br>
+        <span class="font-semibold text-indigo-600">여러 조건을 직접 실험하여 환경과 생장 간의 관계를 체험해보세요!</span>
+      </div>
+    </section>
+  </main>
+  <script>
+    // ======= 시뮬레이션 변수 및 상태 =========
+    const DEFAULTS = {
+      temperature: 25,
+      humidity: 70,
+      nutrient: '높음'
+    };
+    let simCurrent = {
+      temperature: DEFAULTS.temperature,
+      humidity: DEFAULTS.humidity,
+      nutrient: DEFAULTS.nutrient
+    };
+    let simDay = 0;
+    let simArea = [];
+    let simColorSeries = [];
+    let simInterval = null;
+    let simRunning = false;
+    let savedResults = [];
+    let colorOptions = [["#5dbb63", "#b8e356", "#dfe7b1", "#6d6875", "#1b9aaa"], ["#325c74", "#f6ae2d", "#d72638", "#a2d729", "#e2ece9"], ["#2563eb", "#047857", "#fde68a", "#fb7185", "#f3f4f6"], ["#1e293b", "#64748b", "#fbbf24", "#22d3ee", "#8b5cf6"]];
+    let nextColorPalette = 0;
+
+    // ===== 실험 결과 저장 및 그래프 색상 구분 =====
+    function getNextColor(idx) {
+      const palette = colorOptions[nextColorPalette % colorOptions.length];
+      return palette[idx % palette.length];
+    }
+    function getExperimentName(cond) {
+      return `온도:${cond.temperature}℃, 습도:${cond.humidity}%, 영양:${cond.nutrient}`;
+    }
+    function updateResultList() {
+      const ul = document.getElementById('result-list');
+      ul.innerHTML = '';
+      savedResults.forEach((exp, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="legend-dot" style="background:${exp.color};"></span><b>실험${i+1}:</b> ${getExperimentName(exp.condition)}`;
+        ul.appendChild(li);
+      });
+    }
+
+    // ======= 슬라이더/드롭다운 UI 동기화 =======
+    document.getElementById('temperature').addEventListener('input', function(e) {
+      document.getElementById('val-temperature').textContent = e.target.value;
+      simCurrent.temperature = parseInt(e.target.value, 10);
+    });
+    document.getElementById('humidity').addEventListener('input', function(e) {
+      document.getElementById('val-humidity').textContent = e.target.value;
+      simCurrent.humidity = parseInt(e.target.value, 10);
+    });
+    document.getElementById('nutrient').addEventListener('change', function(e) {
+      simCurrent.nutrient = e.target.value;
+    });
+
+    // =============== 곰팡이 성장 모델 ================
+    function calcGrowthRate({temperature, humidity, nutrient}) {
+      // 각 요인을 0.0~1.0 가중치로 변환
+      let tOpt = 28, tW = 7; // 최적 온도: 28℃, 허용 오차 범위
+      let tempFactor = Math.max(0, 1 - Math.abs(temperature - tOpt)/tW); // 28℃ 기준, 7℃ 벗어나면 급속 감소
+      let humidityFactor = Math.max(0, Math.min(1, (humidity-30)/50)); // 30~80% 범위: 1, 80~100% :보정
+      let nutrientFactor = nutrient === '높음' ? 1 : (nutrient === '중간' ? 0.7 : 0.4);
+      let rate = 0.6 + 0.5*tempFactor + 0.5*humidityFactor + 0.9*nutrientFactor;
+      // 성장률은 1~2.2 범위 제한
+      return Math.max(1.0, Math.min(2.2, rate));
+    }
+
+    // ================= 시뮬레이션 실행 =================
+    function resetSimulation() {
+      simDay = 0;
+      simArea = [1.0]; // 초기 면적
+      simColorSeries = [getMoldColor(0, calcGrowthRate(simCurrent))];
+      updateCanvas();
+      updateGraph();
+      updateFeedback();
+      document.getElementById('sim-time').textContent = simDay;
+    }
+
+    function startSimulation() {
+      if(simInterval) clearInterval(simInterval);
+      simDay = 0;
+      simArea = [1.0];
+      simColorSeries = [getMoldColor(0, calcGrowthRate(simCurrent))];
+      updateCanvas();
+      updateGraph();
+      updateFeedback();
+      document.getElementById('sim-time').textContent = 0;
+      simRunning = true;
+      simulateDay();
+      simInterval = setInterval(simulateDay, 700);
+    }
+
+    function simulateDay() {
+      if(simDay >= 14) {
+        stopSimulation();
+        return;
+      }
+      simDay++;
+      document.getElementById('sim-time').textContent = simDay;
+      // 면적 계산: 이전 면적 * 성장률 + noise
+      let growthRate = calcGrowthRate(simCurrent);
+      let prev = simArea[simDay-1];
+      // 약간의 변이값(무작위성)
+      let noise = Math.random() * 0.1 + 0.96;
+      let next = prev * (growthRate/1.8) * noise;
+      // 성장 한계: 15일 후 최대 110~140 도달(환경 따라)
+      let maxArea = 120 * (calcGrowthRate(simCurrent)/2.2 + 0.5);
+      next = Math.min(next, maxArea);
+      simArea.push(next);
+      simColorSeries.push(getMoldColor(simDay, growthRate));
+      updateCanvas();
+      updateGraph();
+      updateFeedback();
+      if(simDay>=14) stopSimulation();
+    }
+
+    function stopSimulation() {
+      simRunning = false;
+      if(simInterval) {
+        clearInterval(simInterval);
+        simInterval = null;
+      }
+    }
+
+    function getMoldColor(day, growthRate) {
+      // 빠르면 초록, 느리면 연노랑~연회색
+      if(growthRate > 2.0) return "#5dbb63";
+      if(growthRate > 1.4) return "#b8e356";
+      if(growthRate > 1.2) return "#dfe7b1";
+      if(growthRate > 1.05) return "#e5e4e2";
+      return "#f3f4f6";
+    }
+
+    // ================== 캔버스 곰팡이 애니메이션 ==================
+    function updateCanvas() {
+      const canvas = document.getElementById('mold-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0, canvas.width, canvas.height);
+      // 중앙 기준 원형 또는 불규칙 패턴으로 퍼짐
+      let centerX = canvas.width/2, centerY = canvas.height/2;
+      let baseRadius = 35; // 시작 반경
+      let maxRadius = 120; // 최대 반경
+      let areaScale = (Math.max(...simArea)-1>0)? (maxRadius-baseRadius)/(Math.max(...simArea)-1) : 1;
+
+      // 성장tracing: 0일~현재일까지 점진적으로 영역 그리기
+      let slices = Math.max(8, 18+Math.floor(simDay*2));
+      for(let d=0; d<=simDay; ++d) {
+        ctx.save();
+        let relArea = Math.sqrt(simArea[d]);
+        let rad = baseRadius + (relArea-1)*areaScale;
+        ctx.globalAlpha = 0.16 + (d/simDay)*0.33;
+        ctx.beginPath();
+        drawIrregularCircle(ctx, centerX, centerY, rad, slices, d, simCurrent, simArea[d]);
+        ctx.closePath();
+        ctx.fillStyle = simColorSeries[d];
+        ctx.shadowColor = simColorSeries[d];
+        ctx.shadowBlur = 8+(d/2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // 테두리
+      ctx.save();
+      ctx.beginPath();
+      let finalRad = baseRadius + (Math.sqrt(simArea[simDay])-1)*areaScale;
+      drawIrregularCircle(ctx, centerX, centerY, finalRad, slices, simDay, simCurrent, simArea[simDay]);
+      ctx.strokeStyle = "#595959";
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.23;
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 비정형 원(곰팡이 불규칙성 시각화)
+    function drawIrregularCircle(ctx, cx, cy, r, slices, t, env, area) {
+      let arr = [];
+      for(let i=0;i<=slices;++i) {
+        let angle = i/slices * 2*Math.PI;
+        // 불규칙도는 영양분 낮을수록, 온도멀수록 큼
+        let irregular = (env.nutrient==="낮음"? 9 : (env.nutrient==="중간"? 6:3)) +
+                        Math.abs(env.temperature-28)*0.9 +
+                        (env.humidity<60? 7:3);
+        let vary = 1 + (Math.sin(angle*3 + t*0.33)*Math.random()*0.15 + Math.cos(angle*2 + area*0.04)*Math.random()*0.10)*irregular/20;
+        let rx = cx + r * Math.cos(angle) * vary;
+        let ry = cy + r * Math.sin(angle) * vary;
+        if(i===0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+      }
+    }
+
+    // ================= 그래프 그리기 (Chart.js) =================
+    let chart = null;
+    function updateGraph() {
+      const ctx = document.getElementById('areaChart').getContext('2d');
+      let datasets = [];
+      // 기존 저장 그래프
+      savedResults.forEach((exp, i) => {
+        datasets.push({
+          label: `실험${i+1}` + ` (${getExperimentName(exp.condition)})`,
+          data: exp.data,
+          fill: false,
+          borderColor: exp.color,
+          backgroundColor: exp.color + "90",
+          borderWidth: 2,
+          pointRadius: 1.5,
+          tension: 0.13
+        });
+      });
+      // 현재 실험 진행 중
+      if (simArea.length>1 && simRunning) {
+        datasets.push({
+          label: "새 실험 (진행중)",
+          data: simArea,
+          fill: false,
+          borderColor: "#6366f1",
+          backgroundColor: "#a5b4fc90",
+          borderWidth: 2,
+          borderDash: [4,3],
+          pointRadius: 1.7,
+          tension: 0.18
+        });
+      }
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: Math.max(15, simArea.length)}, (_,i)=>i),
+          datasets: datasets
+        },
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                font: { family: 'Noto Sans KR', size: 12 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (c) => `면적: ${c.formattedValue}`
+              }
+            }
+          },
+          scales: {
+            x: { title: {display:true, text:"일(시간)", font: {family:'Noto Sans KR'}}, min:0, max:14},
+            y: { title: {display:true, text:"곰팡이 군락 면적(상대값)", font:{family:'Noto Sans KR'}}, min:0, max:150 }
+          }
+        }
+      });
+    }
+
+    // ============= 피드백 제공 로직 ==============
+    function updateFeedback() {
+      const f = document.getElementById('feedback');
+      const growth = calcGrowthRate(simCurrent);
+      let t = simCurrent.temperature, h = simCurrent.humidity, n = simCurrent.nutrient;
+      let tempMsg = t > 32 ? "너무 높은 온도로 성장이 지연됩니다." :
+                    t < 18 ? "온도가 낮아 곰팡이 성장이 느립니다." :
+                    t >=24 && t<=30 ? "온도 조건이 곰팡이 성장에 매우 적합합니다." :
+                    "온도가 적정한 편이지만 최적은 아닙니다.";
+      let humMsg = h > 85 ? "습도가 높아 곰팡이 생장이 유리합니다." :
+                  h < 55 ? "습도가 다소 낮아 성장이 느려질 수 있습니다." :
+                  "습도가 곰팡이 성장에 적합합니다.";
+      let nutMsg = n === "높음" ? "영양분이 충분해 빠른 생장이 가능합니다." :
+                    n === "중간" ? "영양분이 보통 수준입니다." :
+                    "영양분이 부족하여 성장 속도가 느립니다.";
+      let overall = growth >2.0 ? "<span class='text-green-700 font-bold'>이 조건은 곰팡이가 매우 빠르게 성장하는 환경입니다!</span>" :
+                    growth >1.4 ? "<span class='text-green-600 font-bold'>곰팡이 성장에 매우 유리한 조건입니다.</span>" :
+                    growth >1.15 ? "<span class='text-blue-600 font-bold'>곰팡이 성장이 무난한 조건입니다.</span>" :
+                    "<span class='text-yellow-700 font-bold'>곰팡이 성장에는 다소 불리합니다.</span>";
+      if(simDay>0)
+        f.innerHTML = `${overall}<br>· <b>온도:</b> ${tempMsg}<br>· <b>습도:</b> ${humMsg}<br>· <b>영양분:</b> ${nutMsg}<br><br>
+        <span class="text-xs">조건을 바꿔 실험을 반복하여 최적 생장 환경을 찾아보세요.</span>`;
+      else
+        f.innerHTML = "실험 조건을 조절하면, 곰팡이의 성장과 생장 모양이 어떻게 달라지는지 관찰할 수 있습니다.<br><span class='text-indigo-600'>실험을 시작</span>해보세요!";
+    }
+
+    // =========== 저장/초기화/재시작 버튼 컨트롤 ===========
+    document.getElementById('start-btn').addEventListener('click', function() {
+      startSimulation();
+    });
+    document.getElementById('save-btn').addEventListener('click', function() {
+      if(simArea.length <2) return;
+      // 팔레트색상차이
+      const idx = savedResults.length;
+      const color = getNextColor(idx);
+      savedResults.push({
+        condition: {...simCurrent},
+        data: [...simArea],
+        color: color
+      });
+      nextColorPalette++;
+      updateResultList();
+      updateGraph();
+    });
+    document.getElementById('reset-btn').addEventListener('click', function() {
+      stopSimulation();
+      simCurrent = {...DEFAULTS};
+      document.getElementById('temperature').value = simCurrent.temperature;
+      document.getElementById('humidity').value = simCurrent.humidity;
+      document.getElementById('nutrient').value = simCurrent.nutrient;
+      document.getElementById('val-temperature').textContent = simCurrent.temperature;
+      document.getElementById('val-humidity').textContent = simCurrent.humidity;
+      resetSimulation();
+    });
+
+    // ======== 최초 UI 구성 및 기본값 초기화 ==========
+    window.onload = function() {
+      document.getElementById('temperature').value = DEFAULTS.temperature;
+      document.getElementById('humidity').value = DEFAULTS.humidity;
+      document.getElementById('nutrient').value = DEFAULTS.nutrient;
+      document.getElementById('val-temperature').textContent = DEFAULTS.temperature;
+      document.getElementById('val-humidity').textContent = DEFAULTS.humidity;
+      resetSimulation();
+      updateResultList();
+    }
+  </script>
+</body>
+</html>
