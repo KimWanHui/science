@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>빛의 반사와 굴절 현상 시뮬레이션 (모바일 최적화)</title>
+  <meta name="description" content="초등학교 5학년 과학 '빛과 물질' 단원에 대한 인터랙티브 시뮬레이션. 빛의 직진, 반사, 굴절을 실시간으로 체험해보세요. 모바일 최적화, PDF 내보내기 최적화.">
+  <!-- TailwindCSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/@google/fonts@3.3.1/css?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <style>
+    body { font-family: 'Nanum Gothic', sans-serif; background-color: #f8fafc; }
+    .angle-label { min-width: 2.5rem; display: inline-block; text-align: right; }
+    /* 모바일 캔버스 비율 보정 */
+    @media (max-width: 640px) {
+      #sim-canvas { width: 100vw !important; max-width: 100vw !important; height: 56vw !important; max-height: 56vw !important; }
+    }
+    /* PC/태블릿 비율 */
+    #sim-canvas { width: 420px; height: 235px; background: #fff; }
+    /* 드롭다운 화살표 native 제거 */
+    select { appearance: none; -webkit-appearance: none; background-position: right 0.7rem center; background-repeat: no-repeat; }
+  </style>
+</head>
+<body class="text-gray-800">
+
+  <main class="max-w-2xl mx-auto bg-white rounded-xl shadow-md mt-4 mb-8 px-4 py-6 sm:mt-8">
+    <h1 class="text-lg sm:text-2xl text-blue-700 font-bold text-center mb-2">빛의 반사와 굴절 현상 시뮬레이션</h1>
+    <p class="text-base sm:text-lg text-center mb-6">
+      빛이 공기·물·유리 등 서로 다른 물질 경계에서 어떻게 반사되고 굴절되는지 직접 실험해보세요.<br>
+      (모바일, PDF 내보내기 최적화)
+    </p>
+    
+    <!-- 컨트롤러 -->
+    <div class="flex flex-col sm:flex-row items-center justify-center mb-6 sm:space-x-6">
+      <div class="flex flex-col items-center w-full sm:w-auto mb-4 sm:mb-0">
+        <label class="mb-1 font-semibold text-sm" for="angleRange">입사각 (θ<sub>1</sub>)</label>
+        <div class="flex items-center space-x-2 w-full">
+          <input id="angleRange" type="range" min="0" max="80" step="1" value="30" class="w-40 sm:w-44 accent-blue-500">
+          <span id="angleValue" class="angle-label text-blue-700 font-bold">30°</span>
+        </div>
+      </div>
+      <div class="flex flex-col items-center w-full sm:w-auto">
+        <label class="mb-1 font-semibold text-sm" for="mediumSelect">통과 매질</label>
+        <select id="mediumSelect" class="p-2 border border-gray-300 rounded-md text-sm w-28 bg-white focus:outline-none">
+          <option value="water">물 (n=1.33)</option>
+          <option value="glass">유리 (n=1.50)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 캔버스 및 결과 -->
+    <div class="flex flex-col items-center">
+      <canvas id="sim-canvas" width="420" height="235" class="border rounded-lg shadow-sm bg-blue-50"></canvas>
+      <div class="w-full flex flex-row items-center justify-center mt-4 space-x-5">
+        <div>
+          <span class="text-sm text-gray-600">입사각 θ<sub>1</sub>:</span>
+          <span id="result-angle-in" class="text-base font-bold text-blue-500">30°</span>
+        </div>
+        <div>
+          <span class="text-sm text-gray-600">반사각 θ<sub>r</sub>:</span>
+          <span id="result-angle-reflect" class="text-base font-bold text-pink-500">30°</span>
+        </div>
+        <div>
+          <span class="text-sm text-gray-600">굴절각 θ<sub>2</sub>:</span>
+          <span id="result-angle-refract" class="text-base font-bold text-green-500">22.09°</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 원리 설명 -->
+    <section class="mt-7 px-1 space-y-2">
+      <div class="flex items-center mb-2">
+        <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>
+        <span class="font-semibold">학습 포인트</span>
+      </div>
+      <ul class="list-disc text-sm sm:text-base pl-5 space-y-1">
+        <li><b>빛의 직진</b>: 빛은 매질이 변화하지 않으면 곧게 나아갑니다.</li>
+        <li><b>반사 법칙</b>: 입사각과 반사각은 항상 같습니다.<br><span class="text-blue-600">θ<sub>입사</sub> = θ<sub>반사</sub></span></li>
+        <li><b>굴절 법칙(스넬의 법칙)</b>: 두 매질의 굴절률을 고려해 빛이 꺾입니다.<br>
+          <span class="text-green-700">n<sub>1</sub>sinθ<sub>1</sub> = n<sub>2</sub>sinθ<sub>2</sub></span>
+        </li>
+        <li>
+          <b>실험 방법</b> : 입사각을 조절하거나 통과 매질을 바꿔보며 빛의 방향 변화를 직접 관찰하세요.
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- 시뮬레이션 스크립트 -->
+  <script>
+    // 주요 매질 굴절률
+    const nAir = 1.00; // 상단: 공기
+    const mediums = {
+      water: { name: "물", n: 1.33, color: "#6ee7b7" },
+      glass: { name: "유리", n: 1.50, color: "#fbbf24" }
+    };
+
+    // 상태값
+    let angleIn = 30; // 입사각
+    let mediumKey = "water"; // 기본 선택: 물
+
+    // DOM 요소
+    const angleInput = document.getElementById('angleRange');
+    const angleValue = document.getElementById('angleValue');
+    const mediumSelect = document.getElementById('mediumSelect');
+    const canvas = document.getElementById('sim-canvas');
+    const ctx = canvas.getContext('2d');
+    const angleInField = document.getElementById('result-angle-in');
+    const angleRefField = document.getElementById('result-angle-reflect');
+    const angleRefractField = document.getElementById('result-angle-refract');
+
+    // 각도 계산 함수 (deg <-> rad 변환)
+    const toRad = d => d * Math.PI / 180;
+    const toDeg = r => r * 180 / Math.PI;
+
+    // 굴절각 계산 (스넬의 법칙)
+    function getRefractedAngle(n1, n2, angleInDeg) {
+      const a1 = toRad(angleInDeg);
+      const sinA2 = n1 * Math.sin(a1) / n2;
+      if (Math.abs(sinA2) > 1) return NaN; // 전반사 케이스
+      return toDeg(Math.asin(sinA2));
+    }
+
+    // 시뮬레이션 드로잉
+    function drawSimulation() {
+      // 값 설정
+      const n2 = mediums[mediumKey].n;
+      const color2 = mediums[mediumKey].color;
+      const θ1 = angleIn;
+      const θ2 = getRefractedAngle(nAir, n2, θ1);
+      const θr = θ1; // 반사각 = 입사각
+
+      // 캔버스 정의
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // 기준선(경계면)
+      const borderY = Math.floor(h/2);
+      ctx.save();
+      ctx.strokeStyle = "#4b5563";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(30, borderY);
+      ctx.lineTo(w-30, borderY);
+      ctx.stroke();
+      ctx.restore();
+
+      // 위쪽(공기) - 아래쪽(매질) 색 영역
+      ctx.save();
+      ctx.fillStyle = "#dbeafe";
+      ctx.fillRect(0, 0, w, borderY);
+      ctx.fillStyle = color2;
+      ctx.fillRect(0, borderY, w, h-borderY);
+      ctx.restore();
+
+      // 경계면으로 수직선(법선) 표시
+      ctx.save();
+      ctx.strokeStyle = "#475569";
+      ctx.setLineDash([4,3]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w/2, borderY-52);
+      ctx.lineTo(w/2, borderY+52);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // 입사점 (경계면 중심)
+      const px = w/2, py = borderY;
+
+      // 입사선
+      ctx.save();
+      ctx.strokeStyle = "#2563eb";
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      // 입사각 θ1 : 법선 기준 왼쪽 위에서 경계점으로
+      let r1 = toRad(θ1);
+      let len = 85;
+      ctx.moveTo(px - len*Math.sin(r1), py - len*Math.cos(r1));
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      ctx.restore();
+
+      // 반사선
+      ctx.save();
+      ctx.strokeStyle = "#f43f5e";
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      // 반사각 = 입사각, 오른쪽 위로!
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + len*Math.sin(r1), py - len*Math.cos(r1));
+      ctx.stroke();
+      ctx.restore();
+
+      // 굴절선
+      if (!isNaN(θ2)) {
+        ctx.save();
+        ctx.strokeStyle = "#22c55e";
+        ctx.lineWidth = 3.6;
+        ctx.beginPath();
+        let r2 = toRad(θ2);
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + len*Math.sin(r2), py + len*Math.cos(r2));
+        ctx.stroke();
+        ctx.restore();
+
+        // 굴절 각도 표시
+        ctx.save();
+        ctx.fillStyle = "#22c55e";
+        ctx.font = "bold 15px Nanum Gothic";
+        ctx.textAlign = "left";
+        ctx.fillText(`θ₂`, px + 39*Math.sin(r2), py + 39*Math.cos(r2));
+        ctx.restore();
+      } else {
+        // 전반사 케이스 표시
+        ctx.save();
+        ctx.fillStyle = "#d97706";
+        ctx.font = "bold 15px Nanum Gothic";
+        ctx.textAlign = "center";
+        ctx.fillText("전반사 발생!", px+70, py+44);
+        ctx.restore();
+      }
+
+      // 입사각 표시 (파란)
+      ctx.save();
+      ctx.strokeStyle = "#2563eb";
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.arc(px, py, 28, Math.PI/2, Math.PI/2 - r1, true);
+      ctx.stroke();
+      ctx.fillStyle = "#2563eb";
+      ctx.font = "bold 15px Nanum Gothic";
+      ctx.textAlign = "right";
+      ctx.fillText(`θ₁`, px - 33, py - 6);
+      ctx.restore();
+
+      // 반사각 표시 (분홍)
+      ctx.save();
+      ctx.strokeStyle = "#f43f5e";
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.arc(px, py, 28, Math.PI/2, Math.PI/2 + r1, false);
+      ctx.stroke();
+      ctx.fillStyle = "#f43f5e";
+      ctx.font = "bold 15px Nanum Gothic";
+      ctx.textAlign = "left";
+      ctx.fillText(`θr`, px + 28, py - 6);
+      ctx.restore();
+
+      // 상단Label
+      ctx.save();
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 14px Nanum Gothic";
+      ctx.textAlign = "center";
+      ctx.fillText(`공기 (n=1.00)`, px, py-68);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 14px Nanum Gothic";
+      ctx.textAlign = "center";
+      ctx.fillText(`${mediums[mediumKey].name} (n=${n2})`, px, py+86);
+      ctx.restore();
+
+      // 입사점
+      ctx.save();
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 결과 업데이트
+    function updateResults() {
+      const n2 = mediums[mediumKey].n;
+      const θ1 = angleIn;
+      const θ2 = getRefractedAngle(nAir, n2, θ1);
+      angleValue.textContent = θ1 + "°";
+      angleInField.textContent = θ1 + "°";
+      angleRefField.textContent = θ1 + "°";
+      angleRefractField.textContent = isNaN(θ2) ? "전반사" : θ2.toFixed(2) + "°";
+    }
+
+    function render() {
+      drawSimulation();
+      updateResults();
+    }
+
+    // 이벤트 핸들러
+    angleInput.addEventListener('input', e => {
+      angleIn = parseInt(e.target.value, 10);
+      render();
+    });
+    mediumSelect.addEventListener('change', e => {
+      mediumKey = e.target.value;
+      render();
+    });
+
+    // 초기 렌더링
+    render();
+
+    // 모바일 환경: 리사이즈 대응
+    function adjustCanvasSize() {
+      if (window.innerWidth < 640) {
+        canvas.width = window.innerWidth;
+        canvas.height = Math.floor(window.innerWidth * 0.56);
+      } else {
+        canvas.width = 420;
+        canvas.height = 235;
+      }
+      render();
+    }
+    window.addEventListener('resize', adjustCanvasSize);
+    adjustCanvasSize();
+  </script>
+</body>
+</html>
+
