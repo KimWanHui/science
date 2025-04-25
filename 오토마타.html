@@ -1,0 +1,1453 @@
+<script>
+        // DOM 요소
+        const rotationSpeedSlider = document.getElementById('rotation-speed');
+        const speedValue = document.getElementById('speed-value');
+        const currentDirectionToggle = document.getElementById('current-direction');
+        const polarityToggle = document.getElementById('polarity-toggle');
+        const outerCore = document.getElementById('outer-core');
+        const magneticField = document.getElementById('magnetic-field');
+        const feedbackBox = document.getElementById('feedback');
+        const compassNeedle = document.getElementById('compass-needle');
+        const infoButton = document.getElementById('info-button');
+        
+        // 변수
+        let rotationSpeed = 50;
+        let currentDirection = false;
+        let polarity = false;
+        let rotationInterval;
+        let particleInterval;
+        let particles = [];
+        let currentTab = 0;
+        
+        // 시뮬레이션 초기화
+        initSimulation();
+        
+        // 이벤트 리스너
+        rotationSpeedSlider.addEventListener('input', updateRotationSpeed);
+        currentDirectionToggle.addEventListener('change', updateCurrentDirection);
+        polarityToggle.addEventListener('change', updatePolarity);
+        infoButton.addEventListener('click', showInfoModal);
+        
+        // 학습 개념 모달 생성
+        function createConceptModal() {
+            const modal = document.createElement('div');
+            modal.id = 'concept-modal';
+            modal.style.display = 'none';
+            modal.style.position = 'fixed';
+            modal.style.zIndex = '100';
+            modal.style.left = '0';
+            modal.style.top = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.overflow = 'auto';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.backgroundColor = '#fefefe';
+            modalContent.style.margin = '5% auto';
+            modalContent.style.padding = '20px';
+            modalContent.style.border = '1px solid #888';
+            modalContent.style.borderRadius = '10px';
+            modalContent.style.width = '80%';
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.maxHeight = '85vh';
+            modalContent.style.overflow = 'auto';
+            modalContent.style.position = 'relative';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.textContent = '×';
+            closeBtn.style.color = '#aaa';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.right = '20px';
+            closeBtn.style.top = '10px';
+            closeBtn.style.fontSize = '28px';
+            closeBtn.style.fontWeight = 'bold';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+            
+            const title = document.createElement('h2');
+            title.textContent = '지구 자기장 학습 개념';
+            title.style.marginBottom = '20px';
+            title.style.color = '#2c3e50';
+            title.style.textAlign = 'center';
+            
+            // 탭 메뉴 생성
+            const tabContainer = document.createElement('div');
+            tabContainer.style.display = 'flex';
+            tabContainer.style.marginBottom = '20px';
+            tabContainer.style.borderBottom = '1px solid #ddd';
+            
+            const tabs = [
+                { title: '자기장 개요', icon: '🌍' },
+                { title: '다이나모 이론', icon: '⚡' },
+                { title: '오른손 법칙', icon: '👋' },
+                { title: '지자기 역전', icon: '🔄' },
+                { title: '퀴즈', icon: '📝' }
+            ];
+            
+            tabs.forEach((tab, index) => {
+                const tabButton = document.createElement('div');
+                tabButton.textContent = `${tab.icon} ${tab.title}`;
+                tabButton.style.padding = '10px 15px';
+                tabButton.style.cursor = 'pointer';
+                tabButton.style.borderRadius = '5px 5px 0 0';
+                tabButton.style.transition = 'background-color 0.3s';
+                tabButton.style.flex = '1';
+                tabButton.style.textAlign = 'center';
+                tabButton.style.borderBottom = index === 0 ? '3px solid #3498db' : 'none';
+                tabButton.style.fontWeight = index === 0 ? 'bold' : 'normal';
+                tabButton.style.backgroundColor = index === 0 ? '#e3f2fd' : 'transparent';
+                
+                tabButton.onmouseover = function() {
+                    if (currentTab !== index) {
+                        this.style.backgroundColor = '#f5f5f5';
+                    }
+                };
+                
+                tabButton.onmouseout = function() {
+                    if (currentTab !== index) {
+                        this.style.backgroundColor = 'transparent';
+                    }
+                };
+                
+                tabButton.onclick = function() {
+                    switchTab(index);
+                };
+                
+                tabContainer.appendChild(tabButton);
+            });
+            
+            // 탭 콘텐츠 컨테이너
+            const contentContainer = document.createElement('div');
+            contentContainer.id = 'tab-content';
+            
+            // 네비게이션 버튼
+            const navContainer = document.createElement('div');
+            navContainer.style.display = 'flex';
+            navContainer.style.justifyContent = 'space-between';
+            navContainer.style.marginTop = '20px';
+            
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '← 이전';
+            prevButton.style.padding = '8px 15px';
+            prevButton.style.backgroundColor = '#ddd';
+            prevButton.style.border = 'none';
+            prevButton.style.borderRadius = '5px';
+            prevButton.style.cursor = 'pointer';
+            prevButton.onclick = function() {
+                if (currentTab > 0) {
+                    switchTab(currentTab - 1);
+                }
+            };
+            
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '다음 →';
+            nextButton.style.padding = '8px 15px';
+            nextButton.style.backgroundColor = '#3498db';
+            nextButton.style.color = 'white';
+            nextButton.style.border = 'none';
+            nextButton.style.borderRadius = '5px';
+            nextButton.style.cursor = 'pointer';
+            nextButton.onclick = function() {
+                if (currentTab < tabs.length - 1) {
+                    switchTab(currentTab + 1);
+                }
+            };
+            
+            navContainer.appendChild(prevButton);
+            navContainer.appendChild(nextButton);
+            
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(tabContainer);
+            modalContent.appendChild(contentContainer);
+            modalContent.appendChild(navContainer);
+            modal.appendChild(modalContent);
+            
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            document.body.appendChild(modal);
+            
+            // 탭 전환 함수
+            function switchTab(index) {
+                const tabs = tabContainer.children;
+                for (let i = 0; i < tabs.length; i++) {
+                    tabs[i].style.borderBottom = i === index ? '3px solid #3498db' : 'none';
+                    tabs[i].style.fontWeight = i === index ? 'bold' : 'normal';
+                    tabs[i].style.backgroundColor = i === index ? '#e3f2fd' : 'transparent';
+                }
+                
+                currentTab = index;
+                updateContent();
+                
+                // 네비게이션 버튼 업데이트
+                prevButton.style.visibility = index === 0 ? 'hidden' : 'visible';
+                nextButton.style.visibility = index === tabs.length - 1 ? 'hidden' : 'visible';
+            }
+            
+            // 콘텐츠 업데이트 함수
+            function updateContent() {
+                let content = '';
+                
+                switch(currentTab) {
+                    case 0: // 자기장 개요
+                        content = `
+                            <h3 style="color: #3498db;">지구 자기장이란?</h3>
+                            <p>
+                                지구는 거대한 자석처럼 작용하여 우리 주변에 자기장을 형성합니다. 이 자기장은 나침반의 방향을 결정하고, 
+                                태양에서 오는 유해한 방사선으로부터 우리를 보호하는 중요한 역할을 합니다.
+                            </p>
+                            <div class="interactive-demo" style="margin: 20px 0; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+                                <img id="magnetic-field-img" src="https://i.imgur.com/ZOQBfWh.png" alt="지구 자기장 구조" style="max-width: 100%; height: auto; border-radius: 5px; max-height: 250px;">
+                                <div style="margin-top: 15px;">
+                                    <button id="show-magnetosphere" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">자기권 보기</button>
+                                    <button id="show-field-lines" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">자기력선 보기</button>
+                                </div>
+                            </div>
+                            <h4>자기장의 중요성</h4>
+                            <ul style="padding-left: 20px;">
+                                <li><strong>방사선 보호:</strong> 태양에서 오는 유해한 방사선으로부터 지구를 보호합니다.</li>
+                                <li><strong>방향 안내:</strong> 나침반이 작동하는 원리가 됩니다.</li>
+                                <li><strong>동물의 이동:</strong> 철새나 바다거북 같은 동물들의 이동에 영향을 줍니다.</li>
+                                <li><strong>오로라 현상:</strong> 북극광과 남극광과 같은 아름다운 자연 현상을 만듭니다.</li>
+                            </ul>
+                        `;
+                        setTimeout(() => {
+                            document.getElementById('show-magnetosphere').onclick = function() {
+                                document.getElementById('magnetic-field-img').src = 'https://i.imgur.com/fkWjHei.png';
+                            };
+                            document.getElementById('show-field-lines').onclick = function() {
+                                document.getElementById('magnetic-field-img').src = 'https://i.imgur.com/ZOQBfWh.png';
+                            };
+                        }, 100);
+                        break;
+                    
+                    case 1: // 다이나모 이론
+                        content = `
+                            <h3 style="color: #3498db;">자기 다이나모 이론</h3>
+                            <p>
+                                지구 자기장은 지구 내부의 액체 상태인 <strong>외핵</strong>의 움직임에 의해 만들어집니다. 
+                                이 현상을 <strong>'자기 다이나모 이론'</strong>이라고 합니다.
+                            </p>
+                            
+                            <div class="interactive-demo" style="margin: 20px 0; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+                                <div id="dynamo-animation" style="position: relative; width: 300px; height: 300px; margin: 0 auto; border-radius: 50%; overflow: hidden; background-color: #1a4a8c;">
+                                    <div id="inner-core" style="position: absolute; width: 80px; height: 80px; background-color: #ff7043; border-radius: 50%; top: 110px; left: 110px; z-index: 3;"></div>
+                                    <div id="outer-core-demo" style="position: absolute; width: 160px; height: 160px; background-color: #ffc107; border-radius: 50%; top: 70px; left: 70px; z-index: 2;"></div>
+                                    <div id="mantle-demo" style="position: absolute; width: 260px; height: 260px; background-color: #795548; border-radius: 50%; top: 20px; left: 20px; z-index: 1; opacity: 0.7;"></div>
+                                    <div style="position: absolute; width: 300px; height: 300px; border-radius: 50%; top: 0; left: 0; background: linear-gradient(135deg, #8bc34a, #3f51b5); z-index: 0; opacity: 0.5;"></div>
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <button id="start-dynamo" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">다이나모 작동 보기</button>
+                                    <button id="stop-dynamo" style="padding: 8px 15px; margin: 0 5px; background-color: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">중지</button>
+                                </div>
+                            </div>
+                            
+                            <div style="background-color: #f5f5f5; padding: 12px; border-radius: 8px; margin-top: 10px;">
+                                <h4 style="margin-top: 0;">자기 다이나모 작동 원리:</h4>
+                                <ol>
+                                    <li><strong>지구 자전:</strong> 지구의 자전으로 인해 액체 상태의 외핵이 회전합니다.</li>
+                                    <li><strong>전도성 물질:</strong> 외핵은 주로 철과 니켈로 이루어져 있으며, 전기가 잘 통합니다.</li>
+                                    <li><strong>대류 발생:</strong> 내부의 열에 의한 대류와 지구 자전의 영향으로 외핵 내에서 복잡한 대류가 발생합니다.</li>
+                                    <li><strong>전류 발생:</strong> 이 움직임이 전도체(철, 니켈)를 통과하면서 전류가 발생합니다.</li>
+                                    <li><strong>자기장 생성:</strong> 전류가 흐르면 자기장이 생성됩니다(오른손 법칙).</li>
+                                    <li><strong>자기장 유지:</strong> 생성된 자기장은 다시 외핵의 움직임에 영향을 주어 자기장이 지속적으로 유지됩니다.</li>
+                                </ol>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            const outerCoreDemo = document.getElementById('outer-core-demo');
+                            let particles = [];
+                            let animationInterval;
+                            
+                            function createParticles() {
+                                // 기존 입자 제거
+                                for (let i = 0; i < particles.length; i++) {
+                                    if (particles[i].element) {
+                                        particles[i].element.remove();
+                                    }
+                                }
+                                particles = [];
+                                
+                                // 새 입자 생성
+                                for (let i = 0; i < 10; i++) {
+                                    const particle = document.createElement('div');
+                                    particle.style.position = 'absolute';
+                                    particle.style.width = '6px';
+                                    particle.style.height = '6px';
+                                    particle.style.backgroundColor = '#ffeb3b';
+                                    particle.style.borderRadius = '50%';
+                                    
+                                    // 랜덤 위치 설정
+                                    const angle = Math.random() * Math.PI * 2;
+                                    const distance = 30 + Math.random() * 40;
+                                    const x = 80 + Math.cos(angle) * distance;
+                                    const y = 80 + Math.sin(angle) * distance;
+                                    
+                                    particle.style.left = `${x}px`;
+                                    particle.style.top = `${y}px`;
+                                    
+                                    outerCoreDemo.appendChild(particle);
+                                    
+                                    particles.push({
+                                        element: particle,
+                                        angle: angle,
+                                        distance: distance,
+                                        speed: 0.01 + (Math.random() * 0.02)
+                                    });
+                                }
+                            }
+                            
+                            function startAnimation() {
+                                if (animationInterval) {
+                                    clearInterval(animationInterval);
+                                }
+                                
+                                document.getElementById('start-dynamo').style.display = 'none';
+                                document.getElementById('stop-dynamo').style.display = 'inline-block';
+                                
+                                createParticles();
+                                
+                                animationInterval = setInterval(() => {
+                                    particles.forEach(particle => {
+                                        // 각도 업데이트
+                                        particle.angle += particle.speed;
+                                        
+                                        // 새 위치 계산
+                                        const x = 80 + Math.cos(particle.angle) * particle.distance;
+                                        const y = 80 + Math.sin(particle.angle) * particle.distance;
+                                        
+                                        // 위치 업데이트
+                                        particle.element.style.left = `${x}px`;
+                                        particle.element.style.top = `${y}px`;
+                                    });
+                                }, 50);
+                            }
+                            
+                            function stopAnimation() {
+                                if (animationInterval) {
+                                    clearInterval(animationInterval);
+                                    animationInterval = null;
+                                }
+                                
+                                document.getElementById('start-dynamo').style.display = 'inline-block';
+                                document.getElementById('stop-dynamo').style.display = 'none';
+                                
+                                // 입자 제거
+                                for (let i = 0; i < particles.length; i++) {
+                                    if (particles[i].element) {
+                                        particles[i].element.remove();
+                                    }
+                                }
+                                particles = [];
+                            }
+                            
+                            document.getElementById('start-dynamo').onclick = startAnimation;
+                            document.getElementById('stop-dynamo').onclick = stopAnimation;
+                        }, 100);
+                        break;
+                    
+                    case 2: // 오른손 법칙
+                        content = `
+                            <h3 style="color: #3498db;">오른손 법칙</h3>
+                            <p>
+                                전류와 자기장의 관계를 이해하는 데 도움이 되는 규칙입니다. 전류가 흐르면 그 주위에 자기장이 형성되는데,
+                                이때 자기장의 방향은 오른손 법칙으로 알 수 있습니다.
+                            </p>
+                            <div style="background-color: #e8eaf6; padding: 12px; border-radius: 8px; margin: 10px 0; text-align: center; font-weight: bold; color: #3f51b5;">
+                                오른손의 엄지를 <strong>전류 방향</strong>으로 향하게 하면, 나머지 네 손가락이 감싸는 방향이 <strong>자기장의 방향</strong>입니다.
+                            </div>
+                            <div class="interactive-demo" style="margin: 20px 0; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+                                <div id="right-hand-animation" style="position: relative; width: 300px; height: 250px; margin: 0 auto;">
+                                    <img id="right-hand-img" src="https://i.imgur.com/JK9fmYn.png" alt="오른손 법칙" style="max-width: 100%; height: auto; border-radius: 5px;">
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <button id="show-animation" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">애니메이션 보기</button>
+                                    <button id="show-static" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">정지 이미지 보기</button>
+                                </div>
+                            </div>
+                            <p>
+                                이 법칙을 지구에 적용하면, 지구 내부 외핵에서 흐르는 전류의 방향에 따라 지구 자기장의 방향이 결정됩니다.
+                                지구 내부에서는 복잡한 대류 현상으로 여러 방향의 전류가 발생하지만, 전체적으로는 일정한 패턴을 형성하여
+                                지구 자기장이 안정적으로 유지됩니다.
+                            </p>
+                            <div style="background-color: #f5f5f5; padding: 12px; border-radius: 8px; margin-top: 10px;">
+                                <h4 style="margin-top: 0;">실험해보기:</h4>
+                                <p>
+                                    직선 전류가 흐르는 도선 주위에 나침반을 놓으면, 나침반의 N극(자침의 빨간 부분)이 자기장 방향을 가리킵니다.
+                                    도선에 흐르는 전류의 방향을 바꾸면, 나침반의 방향도 바뀝니다.
+                                </p>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            const staticImg = 'https://i.imgur.com/JK9fmYn.png';
+                            const animatedImg = 'https://i.imgur.com/4EQyTu7.gif';
+                            
+                            document.getElementById('show-animation').onclick = function() {
+                                document.getElementById('right-hand-img').src = animatedImg;
+                                this.style.display = 'none';
+                                document.getElementById('show-static').style.display = 'inline-block';
+                            };
+                            
+                            document.getElementById('show-static').onclick = function() {
+                                document.getElementById('right-hand-img').src = staticImg;
+                                this.style.display = 'none';
+                                document.getElementById('show-animation').style.display = 'inline-block';
+                            };
+                        }, 100);
+                        break;
+                    
+                    case 3: // 지자기 역전
+                        content = `
+                            <h3 style="color: #3498db;">지자기 역전</h3>
+                            <p>
+                                현재 지구의 자기장은 지리적 남극 근처에서 나와서 지리적 북극 근처로 들어가는 형태를 보입니다. 
+                                따라서 지리적 북극 근처에 자기적 남극이, 지리적 남극 근처에 자기적 북극이 위치합니다.
+                            </p>
+                            <div class="interactive-demo" style="margin: 20px 0; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+                                <div style="position: relative; width: 300px; height: 300px; margin: 0 auto;">
+                                    <img src="https://i.imgur.com/8urfYMh.png" alt="지구 자기장" style="width: 300px; height: 300px; border-radius: 50%;">
+                                    <img id="field-overlay" src="https://i.imgur.com/Qyf5vl3.png" alt="자기장 방향" style="position: absolute; top: 0; left: 0; width: 300px; height: 300px; transition: transform 1s ease;">
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <button id="toggle-polarity" style="padding: 8px 15px; margin: 0 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">극성 전환하기</button>
+                                </div>
+                                <p id="polarity-status" style="font-weight: bold; margin-top: 10px;">현재: 정상 상태</p>
+                            </div>
+                            <p>
+                                역사적으로 지구 자기장은 수십만 년에서 수백만 년 주기로 극성이 뒤바뀌는 <strong>'지자기 역전'</strong> 현상을 보여왔습니다.
+                                지자기 역전이 일어나면 나침반의 N극은 현재와 반대 방향을 가리키게 됩니다.
+                            </p>
+                            <div style="background-color: #f5f5f5; padding: 12px; border-radius: 8px; margin-top: 10px;">
+                                <h4 style="margin-top: 0;">지자기 역전의 증거:</h4>
+                                <p>
+                                    해저 지각의 암석에서 발견되는 자성 미네랄은 당시 지구 자기장 방향에 따라 배열되어 있습니다.
+                                    해저 확장대에서 멀어질수록 암석의 자기 방향이 번갈아 바뀌는 것을 관찰할 수 있는데,
+                                    이는 지구 역사에서 자기장 방향이 여러 번 바뀌었다는 증거입니다.
+                                </p>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            let isReversed = false;
+                            document.getElementById('toggle-polarity').onclick = function() {
+                                isReversed = !isReversed;
+                                document.getElementById('field-overlay').style.transform = isReversed ? 'rotate(180deg)' : 'rotate(0deg)';
+                                document.getElementById('polarity-status').textContent = isReversed ? '현재: 역전 상태' : '현재: 정상 상태';
+                            };
+                        }, 100);
+                        break;
+                    
+                    case 4: // 퀴즈
+                        content = `
+                            <h3 style="color: #3498db;">지구 자기장 퀴즈</h3>
+                            <p>배운 내용을 확인해봅시다. 아래 퀴즈에 답해보세요!</p>
+                            
+                            <div id="quiz-container" style="margin-top: 20px;">
+                                <div id="question-1" class="quiz-question" style="margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                                    <h4>문제 1: 지구 자기장은 주로 지구의 어느 부분에서 만들어질까요?</h4>
+                                    <div style="margin-top: 10px;">
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q1" id="q1a" value="a">
+                                            <label for="q1a">내핵(고체 상태)</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q1" id="q1b" value="b">
+                                            <label for="q1b">외핵(액체 상태)</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q1" id="q1c" value="c">
+                                            <label for="q1c">맨틀</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q1" id="q1d" value="d">
+                                            <label for="q1d">지각</label>
+                                        </div>
+                                    </div>
+                                    <div id="feedback-1" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+                                    <button id="check-1" style="margin-top: 10px; padding: 8px 15px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">정답 확인</button>
+                                </div>
+                                
+                                <div id="question-2" class="quiz-question" style="margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: none;">
+                                    <h4>문제 2: 지구 자기장의 방향이 수십만 년마다 바뀌는 현상을 무엇이라고 할까요?</h4>
+                                    <div style="margin-top: 10px;">
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q2" id="q2a" value="a">
+                                            <label for="q2a">자기폭풍</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q2" id="q2b" value="b">
+                                            <label for="q2b">자기 재편성</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q2" id="q2c" value="c">
+                                            <label for="q2c">지자기 역전</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q2" id="q2d" value="d">
+                                            <label for="q2d">자기장 진동</label>
+                                        </div>
+                                    </div>
+                                    <div id="feedback-2" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+                                    <button id="check-2" style="margin-top: 10px; padding: 8px 15px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">정답 확인</button>
+                                </div>
+                                
+                                <div id="question-3" class="quiz-question" style="margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: none;">
+                                    <h4>문제 3: 전류가 흐를 때 자기장의 방향을 알아내는 법칙은 무엇인가요?</h4>
+                                    <div style="margin-top: 10px;">
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q3" id="q3a" value="a">
+                                            <label for="q3a">왼손 법칙</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q3" id="q3b" value="b">
+                                            <label for="q3b">오른손 법칙</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q3" id="q3c" value="c">
+                                            <label for="q3c">앙페르 법칙</label>
+                                        </div>
+                                        <div style="margin-bottom: 10px;">
+                                            <input type="radio" name="q3" id="q3d" value="d">
+                                            <label for="q3d">패러데이 법칙</label>
+                                        </div>
+                                    </div>
+                                    <div id="feedback-3" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+                                    <button id="check-3" style="margin-top: 10px; padding: 8px 15px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">정답 확인</button>
+                                </div>
+                                
+                                <div id="quiz-result" style="margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #e8f8f5; display: none;">
+                                    <h3 style="margin-top: 0; color: #16a085;">퀴즈 결과</h3>
+                                    <p id="result-message"></p>
+                                    <button id="retry-quiz" style="margin-top: 10px; padding: 8px 15px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">다시 풀기</button>
+                                </div>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            const answers = {
+                                q1: 'b',
+                                q2: 'c',
+                                q3: 'b'
+                            };
+                            
+                            let currentQuestion = 1;
+                            let score = 0;
+                            
+                            // 첫 번째 문제 확인 버튼
+                            document.getElementById('check-1').onclick = function() {
+                                const selected = document.querySelector('input[name="q1"]:checked');
+                                const feedback = document.getElementById('feedback-1');
+                                
+                                if (!selected) {
+                                    feedback.textContent = '답을 선택해주세요!';
+                                    feedback.style.display = 'block';
+                                    feedback.style.backgroundColor = '#ffe5e5';
+                                    return;
+                                }
+                                
+                                if (selected.value === answers.q1) {
+                                    feedback.textContent = '정답입니다! 지구 자기장은 액체 상태의 외핵에서 발생하는 전류에 의해 생성됩니다.';
+                                    feedback.style.backgroundColor = '#e8f5e9';
+                                    score++;
+                                } else {
+                                    feedback.textContent = '오답입니다. 지구 자기장은 액체 상태의 외핵에서 발생합니다.';
+                                    feedback.style.backgroundColor = '#ffebee';
+                                }
+                                
+                                feedback.style.display = 'block';
+                                this.disabled = true;
+                                
+                                // 다음 문제로 이동
+                                setTimeout(() => {
+                                    document.getElementById('question-1').style.display = 'none';
+                                    document.getElementById('question-2').style.display = 'block';
+                                    currentQuestion = 2;
+                                }, 1500);
+                            };
+                            
+                            // 두 번째 문제 확인 버튼
+                            document.getElementById('check-2').onclick = function() {
+                                const selected = document.querySelector('input[name="q2"]:checked');
+                                const feedback = document.getElementById('feedback-2');
+                                
+                                if (!selected) {
+                                    feedback.textContent = '답을 선택해주세요!';
+                                    feedback.style.display = 'block';
+                                    feedback.style.backgroundColor = '#ffe5e5';
+                                    return;
+                                }
+                                
+                                if (selected.value === answers.q2) {
+                                    feedback.textContent = '정답입니다! 지구 자기장의 극성이 뒤바뀌는 현상을 지자기 역전이라고 합니다.';
+                                    feedback.style.backgroundColor = '#e8f5e9';
+                                    score++;
+                                } else {
+                                    feedback.textContent = '오답입니다. 지구 자기장의 극성이 뒤바뀌는 현상을 지자기 역전이라고 합니다.';
+                                    feedback.style.backgroundColor = '#ffebee';
+                                }
+                                
+                                feedback.style.display = 'block';
+                                this.disabled = true;
+                                
+                                // 다음 문제로 이동
+                                setTimeout(() => {
+                                    document.getElementById('question-2').style.display = 'none';
+                                    document.getElementById('question-3').style.display = 'block';
+                                    currentQuestion = 3;
+                                }, 1500);
+                            };
+                            
+                            // 세 번째 문제 확인 버튼
+                            document.getElementById('check-3').onclick = function() {
+                                const selected = document.querySelector('input[name="q3"]:checked');
+                                const feedback = document.getElementById('feedback-3');
+                                
+                                if (!selected) {
+                                    feedback.textContent = '답을 선택해주세요!';
+                                    feedback.style.display = 'block';
+                                    feedback.style.backgroundColor = '#ffe5e5';
+                                    return;
+                                }
+                                
+                                if (selected.value === answers.q3) {
+                                    feedback.textContent = '정답입니다! 오른손 법칙에 따르면 전류 방향으로 엄지를 향하게 할 때 나머지 손가락이 감싸는 방향이 자기장 방향입니다.';
+                                    feedback.style.backgroundColor = '#e8f5e9';
+                                    score++;
+                                } else {
+                                    feedback.textContent = '오답입니다. 전류와 자기장의 방향 관계는 오른손 법칙을 따릅니다.';
+                                    feedback.style.backgroundColor = '#ffebee';
+                                }
+                                
+                                feedback.style.display = 'block';
+                                this.disabled = true;
+                                
+                                // 결과 표시
+                                setTimeout(() => {
+                                    document.getElementById('question-3').style.display = 'none';
+                                    document.getElementById('quiz-result').style.display = 'block';
+                                    
+                                    const resultMessage = document.getElementById('result-message');
+                                    resultMessage.textContent = `총 3문제 중 ${score}문제를 맞추셨습니다!`;
+                                    
+                                    if (score === 3) {
+                                        resultMessage.innerHTML += '<br><br>축하합니다! 지구 자기장에 대해 잘 이해하고 계시네요!';
+                                    } else if (score >= 1) {
+                                        resultMessage.innerHTML += '<br><br>좋은 시도입니다! 틀린 문제를 다시 한번 살펴보세요.';
+                                    } else {
+                                        resultMessage.innerHTML += '<br><br>다시 한번 학습 내용을 살펴보고 도전해보세요!';
+                                    }
+                                }, 1500);
+                            };
+                            
+                            // 퀴즈 다시 풀기 버튼
+                            document.getElementById('retry-quiz').onclick = function() {
+                                // 상태 초기화
+                                currentQuestion = 1;
+                                score = 0;
+                                
+                                // 모든 문제 숨기기
+                                document.getElementById('question-1').style.display = 'block';
+                                document.getElementById('question-2').style.display = 'none';
+                                document.getElementById('question-3').style.display = 'none';
+                                document.getElementById('quiz-result').style.display = 'none';
+                                
+                                // 피드백 숨기기 및 버튼 활성화
+                                document.getElementById('feedback-1').style.display = 'none';
+                                document.getElementById('feedback-2').style.display = 'none';
+                                document.getElementById('feedback-3').style.display = 'none';
+                                
+                                document.getElementById('check-1').disabled = false;
+                                document.getElementById('check-2').disabled = false;
+                                document.getElementById('check-3').disabled = false;
+                                
+                                // 라디오 버튼 초기화
+                                document.querySelectorAll('input[type="radio"]').forEach(input => {
+                                    input.checked = false;
+                                });
+                            };
+                        }, 100);
+                        break;
+                }
+                
+                document.getElementById('tab-content').innerHTML = content;
+            }
+            
+            // 초기 콘텐츠 로드
+            switchTab(0);
+            
+            return modal;
+        }
+        
+        // 정보 모달 표시 함수
+        function showInfoModal() {
+            let modal = document.getElementById('concept-modal');
+            if (!modal) {
+                modal = createConceptModal();
+            }
+            modal.style.display = 'block';
+        }<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지구 자기장 오토마타 시뮬레이션</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f0f5ff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .intro-box {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+        
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .earth-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .earth {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle at 150px 150px, #4a89dc, #1a4a8c);
+            border-radius: 50%;
+            top: 50px;
+            left: 50px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 100, 0.2);
+        }
+        
+        .earth-cutaway {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            top: 0;
+            left: 0;
+            clip-path: polygon(0 0, 150px 0, 150px 300px, 0 300px);
+        }
+        
+        .earth-core {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: #ff7043;
+            border-radius: 50%;
+            top: 110px;
+            left: 110px;
+            z-index: 2;
+        }
+        
+        .outer-core {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            background-color: #ffc107;
+            border-radius: 50%;
+            top: 70px;
+            left: 70px;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .mantle {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            background-color: #795548;
+            border-radius: 50%;
+            top: 20px;
+            left: 20px;
+            z-index: 0;
+            opacity: 0.7;
+        }
+        
+        .crust {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #8bc34a, #3f51b5);
+            z-index: -1;
+            opacity: 0.8;
+        }
+        
+        .magnetic-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+        }
+        
+        .field-line {
+            position: absolute;
+            height: 4px;
+            background-color: #3498db;
+            transform-origin: center left;
+        }
+        
+        .field-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid #3498db;
+            transform-origin: center bottom;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin: 20px 0;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .control-group {
+            background-color: #f5f7fa;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .control-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            margin: 10px 0;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            outline: none;
+            border-radius: 4px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4a89dc;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4a89dc;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        .feedback-box {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e1f5fe;
+            border-left: 5px solid #4a89dc;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: #ffeb3b;
+            border-radius: 50%;
+        }
+        
+        .compass {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 2px solid #555;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .compass-needle {
+            position: absolute;
+            width: 4px;
+            height: 50px;
+            background: linear-gradient(to bottom, red 50%, blue 50%);
+            transform-origin: center;
+        }
+        
+        .earth-labels {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .label {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        
+        .task-box {
+            background-color: #fff8e1;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            border-left: 5px solid #ffb300;
+        }
+        
+        .task-box h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #e65100;
+        }
+        
+        .explanation {
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+        
+        .info-box {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .button {
+            padding: 10px 15px;
+            background-color: #4a89dc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        .button:hover {
+            background-color: #3a79cc;
+        }
+        
+        @media (max-width: 768px) {
+            .earth-container {
+                width: 320px;
+                height: 320px;
+            }
+            
+            .earth {
+                width: 240px;
+                height: 240px;
+                top: 40px;
+                left: 40px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>지구 자기장 오토마타 시뮬레이션</h1>
+        
+        <div class="intro-box">
+            <h3>🌍 이 시뮬레이션에 대하여</h3>
+            <p>이 시뮬레이션은 지구 내부에서 자기장이 어떻게 만들어지는지 보여줍니다. 아래 조작 버튼을 통해 지구 내부의 움직임과 자기장의 관계를 직접 체험해보세요!</p>
+            <p><strong>학습 목표:</strong> 지구 내부의 구조와 운동을 이해하고, 지구 자기장이 형성되는 원리를 탐구합니다.</p>
+        </div>
+        
+        <div class="simulation-container">
+            <div class="earth-container">
+                <div class="magnetic-field" id="magnetic-field"></div>
+                <div class="earth">
+                    <div class="earth-cutaway">
+                        <div class="crust"></div>
+                        <div class="mantle"></div>
+                        <div class="outer-core" id="outer-core"></div>
+                        <div class="earth-core"></div>
+                    </div>
+                </div>
+                <div class="compass">
+                    <div class="compass-needle" id="compass-needle"></div>
+                </div>
+                <div class="earth-labels">
+                    <div class="label" style="top: 50px; left: 300px;">자기장</div>
+                    <div class="label" style="top: 150px; left: 20px;">내핵 (고체)</div>
+                    <div class="label" style="top: 100px; left: 40px;">외핵 (액체)</div>
+                    <div class="label" style="top: 60px; left: 60px;">맨틀</div>
+                    <div class="label" style="top: 30px; left: 90px;">지각</div>
+                    <div class="label" style="top: 20px; right: 100px;">나침반</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <div class="control-title">오토마타 조작</div>
+                    
+                    <div class="slider-container">
+                        <label for="rotation-speed">회전 속도 <span id="speed-value">50%</span></label>
+                        <input type="range" id="rotation-speed" min="0" max="100" value="50">
+                    </div>
+                    
+                    <div class="switch-container">
+                        <span>전류 방향</span>
+                        <label class="switch">
+                            <input type="checkbox" id="current-direction">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="switch-container">
+                        <span>자기장 극성</span>
+                        <label class="switch">
+                            <input type="checkbox" id="polarity-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="task-box">
+                        <h4>🔍 탐구 과제</h4>
+                        <ol>
+                            <li>회전 속도를 0으로 낮추면 어떤 일이 일어날까요?</li>
+                            <li>전류 방향을 바꾸면 자기장 화살표는 어떻게 바뀔까요?</li>
+                            <li>극성 전환이 일어나면 나침반은 어떻게 반응할까요?</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-title">관찰 결과</div>
+                    <div class="feedback-box" id="feedback">
+                        오토마타를 회전시켜 지구 자기장을 관찰해보세요!
+                    </div>
+                    <button class="button" id="info-button">학습 개념 설명</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h2>지구 자기장의 원리</h2>
+            <p>
+                지구는 마치 거대한 자석처럼 자기장을 가지고 있습니다. 이 자기장은 지구 내부의 액체 외핵(바깥쪽 핵)에서 발생하는 
+                전류에 의해 생성됩니다. 이러한 현상을 '지구 다이나모'라고 합니다.
+            </p>
+            <div class="info-box">
+                <p>
+                    <strong>지구 내부 구조:</strong><br>
+                    - 지각: 지구의 가장 바깥쪽 층<br>
+                    - 맨틀: 지각 아래의 두꺼운 층<br>
+                    - 외핵: 액체 상태의 철과 니켈로 이루어진 층<br>
+                    - 내핵: 고체 상태의 철과 니켈로 이루어진 중심부
+                </p>
+            </div>
+            <p>
+                지구의 자전과 내부 열에 의한 대류로 인해 액체 상태의 외핵이 움직이면, 전기가 흐르게 됩니다.
+                이 전류는 자기장을 만들어내고, 지구의 북극과 남극에서 자기력선이 나오고 들어가는 형태를 보입니다.
+            </p>
+            <p>
+                <strong>실생활 연결:</strong> 지구 자기장은 나침반이 북쪽을 가리키게 하고, 태양에서 오는 유해한 방사선으로부터 지구를 보호합니다. 
+                또한 철새나 바다거북과 같은 동물들이 방향을 찾는 데 도움을 주며, 북극광(오로라)을 만들어냅니다.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소
+        const rotationSpeedSlider = document.getElementById('rotation-speed');
+        const speedValue = document.getElementById('speed-value');
+        const currentDirectionToggle = document.getElementById('current-direction');
+        const polarityToggle = document.getElementById('polarity-toggle');
+        const outerCore = document.getElementById('outer-core');
+        const magneticField = document.getElementById('magnetic-field');
+        const feedbackBox = document.getElementById('feedback');
+        const compassNeedle = document.getElementById('compass-needle');
+        const infoButton = document.getElementById('info-button');
+        
+        // 변수
+        let rotationSpeed = 50;
+        let currentDirection = false;
+        let polarity = false;
+        let rotationInterval;
+        let particleInterval;
+        let particles = [];
+        
+        // 시뮬레이션 초기화
+        initSimulation();
+        
+        // 이벤트 리스너
+        rotationSpeedSlider.addEventListener('input', updateRotationSpeed);
+        currentDirectionToggle.addEventListener('change', updateCurrentDirection);
+        polarityToggle.addEventListener('change', updatePolarity);
+        infoButton.addEventListener('click', showInfoModal);
+        
+        // 시뮬레이션 초기화 함수
+        function initSimulation() {
+            createMagneticField();
+            createParticles();
+            startRotation();
+            updateFeedback();
+        }
+        
+        // 자기장 생성 함수
+        function createMagneticField() {
+            magneticField.innerHTML = '';
+            
+            // 자기장 선 생성
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI;
+                
+                // 위쪽 자기장 선
+                createFieldLine(angle, true);
+                
+                // 아래쪽 자기장 선
+                createFieldLine(angle + Math.PI, false);
+            }
+            
+            updateFieldStrength();
+        }
+        
+        // 자기장 선 생성 함수
+        function createFieldLine(angle, isTop) {
+            const centerX = 200;
+            const centerY = 200;
+            
+            // 시작점 계산
+            const startDistance = 80;
+            const startX = centerX + Math.cos(angle) * startDistance;
+            const startY = centerY + Math.sin(angle) * startDistance;
+            
+            // 끝점 계산
+            const endDistance = 190;
+            const endX = centerX + Math.cos(angle) * endDistance;
+            const endY = centerY + Math.sin(angle) * endDistance;
+            
+            // 길이와 각도 계산
+            const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const lineAngle = Math.atan2(endY - startY, endX - startX);
+            
+            // 선 엘리먼트 생성
+            const line = document.createElement('div');
+            line.className = 'field-line';
+            line.style.width = `${length}px`;
+            line.style.left = `${startX}px`;
+            line.style.top = `${startY}px`;
+            line.style.transform = `rotate(${lineAngle}rad)`;
+            
+            // 색상 설정
+            const isReversed = (polarity && isTop) || (!polarity && !isTop);
+            line.style.backgroundColor = isReversed ? '#e74c3c' : '#3498db';
+            
+            magneticField.appendChild(line);
+            
+            // 화살표 생성
+            const arrow = document.createElement('div');
+            arrow.className = 'field-arrow';
+            arrow.style.left = `${endX - 4}px`;
+            arrow.style.top = `${endY - 6}px`;
+            arrow.style.transform = `rotate(${lineAngle + (isReversed ? Math.PI : 0)}rad)`;
+            arrow.style.borderBottomColor = isReversed ? '#e74c3c' : '#3498db';
+            
+            magneticField.appendChild(arrow);
+        }
+        
+        // 자기장 세기 업데이트 함수
+        function updateFieldStrength() {
+            const fieldStrength = rotationSpeed / 50;
+            
+            const fieldLines = document.querySelectorAll('.field-line');
+            const fieldArrows = document.querySelectorAll('.field-arrow');
+            
+            fieldLines.forEach(line => {
+                line.style.height = `${2 + (fieldStrength * 2)}px`;
+                
+                // 회전 속도가 0이면 자기장 숨기기
+                line.style.opacity = rotationSpeed === 0 ? '0.2' : '1';
+            });
+            
+            fieldArrows.forEach(arrow => {
+                arrow.style.borderBottomWidth = `${8 + (fieldStrength * 4)}px`;
+                
+                // 회전 속도가 0이면 자기장 숨기기
+                arrow.style.opacity = rotationSpeed === 0 ? '0.2' : '1';
+            });
+            
+            // 나침반 업데이트
+            compassNeedle.style.transform = `rotate(${polarity ? 180 : 0}deg)`;
+        }
+        
+        // 전자 입자 생성 함수
+        function createParticles() {
+            // 기존 입자 제거
+            particles.forEach(particle => {
+                if (particle.element) {
+                    particle.element.remove();
+                }
+            });
+            particles = [];
+            
+            // 새 입자 생성
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // 랜덤 위치 설정
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 30 + Math.random() * 40;
+                const x = 150 + Math.cos(angle) * distance;
+                const y = 150 + Math.sin(angle) * distance;
+                
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                
+                outerCore.appendChild(particle);
+                
+                particles.push({
+                    element: particle,
+                    angle: angle,
+                    distance: distance,
+                    speed: 0.002 + (Math.random() * 0.003)
+                });
+            }
+            
+            // 입자 이동 시작
+            startParticleMovement();
+        }
+        
+        // 입자 이동 함수
+        function startParticleMovement() {
+            if (particleInterval) {
+                clearInterval(particleInterval);
+            }
+            
+            particleInterval = setInterval(() => {
+                particles.forEach(particle => {
+                    // 각도 업데이트 (전류 방향에 따라)
+                    particle.angle += (currentDirection ? -1 : 1) * particle.speed * (rotationSpeed / 25);
+                    
+                    // 새 위치 계산
+                    const x = 150 + Math.cos(particle.angle) * particle.distance;
+                    const y = 150 + Math.sin(particle.angle) * particle.distance;
+                    
+                    // 위치 업데이트
+                    particle.element.style.left = `${x}px`;
+                    particle.element.style.top = `${y}px`;
+                });
+            }, 33); // 약 30fps
+        }
+        
+        // 회전 시작 함수
+        function startRotation() {
+            if (rotationInterval) {
+                clearInterval(rotationInterval);
+            }
+            
+            // 회전 속도가 0보다 크면 회전 시작
+            if (rotationSpeed > 0) {
+                const rotationStep = (currentDirection ? -1 : 1) * 0.2 * (rotationSpeed / 50);
+                
+                rotationInterval = setInterval(() => {
+                    const earthElement = document.querySelector('.earth');
+                    const currentRotation = getRotationValue(earthElement);
+                    earthElement.style.transform = `rotate(${currentRotation + rotationStep}deg)`;
+                }, 33); // 약 30fps
+            }
+        }
+        
+        // 현재 회전 값 가져오기
+        function getRotationValue(element) {
+            const transform = element.style.transform;
+            if (!transform || transform === 'none') {
+                return 0;
+            }
+            
+            const match = transform.match(/rotate\(([^)]+)deg\)/);
+            return match ? parseFloat(match[1]) : 0;
+        }
+        
+        // 회전 속도 업데이트 함수
+        function updateRotationSpeed() {
+            rotationSpeed = parseInt(rotationSpeedSlider.value);
+            speedValue.textContent = `${rotationSpeed}%`;
+            
+            // 시각화 업데이트
+            updateFieldStrength();
+            startRotation();
+            updateFeedback();
+        }
+        
+        // 전류 방향 업데이트 함수
+        function updateCurrentDirection() {
+            currentDirection = currentDirectionToggle.checked;
+            
+            // 시각화 업데이트
+            createMagneticField(); // 자기장 재생성
+            startRotation();
+            updateFeedback();
+        }
+        
+        // 자기장 극성 업데이트 함수
+        function updatePolarity() {
+            polarity = polarityToggle.checked;
+            
+            // 시각화 업데이트
+            createMagneticField(); // 자기장 재생성
+            updateFeedback();
+        }
+        
+        // 피드백 업데이트 함수
+        function updateFeedback() {
+            let message = '';
+            
+            // 회전 속도에 따른 피드백
+            if (rotationSpeed === 0) {
+                message = '지구 내부의 움직임이 멈추면 자기장이 생성되지 않습니다. 회전 속도를 높여보세요!';
+            } else if (rotationSpeed < 30) {
+                message = '회전 속도가 느리면 자기장의 세기가 약해집니다. 현재 자기장이 매우 약한 상태입니다.';
+            } else if (rotationSpeed > 70) {
+                message = '회전 속도가 빠르면 자기장의 세기가 강해집니다. 현재 자기장이 매우 강한 상태입니다!';
+            } else {
+                message = '현재 자기장의 세기는 지구 평균 수준입니다.';
+            }
+            
+            message += '<br><br>';
+            
+            // 전류와 자기장 관계에 대한 피드백
+            message += currentDirection ? 
+                '전류가 반시계 방향으로 흐르고 있습니다. ' : 
+                '전류가 시계 방향으로 흐르고 있습니다. ';
+                
+            message += polarity ? 
+                '자기장 극성이 역전된 상태입니다 (지자기 역전 현상).' : 
+                '자기장 극성이 정상 상태입니다.';
+            
+            feedbackBox.innerHTML = message;
+        }
+        
+        // 정보 모달 표시 함수
+        function showInfoModal() {
+            alert("지구 자기장은 지구 내부의 액체 상태인 외핵의 움직임에 의해 만들어집니다. 이 현상을 '자기 다이나모'라고 합니다.\n\n외핵 내의 액체 금속이 지구 자전에 의해 회전하면서 전류가 발생하고, 이 전류에 의해 자기장이 생성됩니다. 오른손 법칙에 따라 전류 방향과 자기장 방향이 결정됩니다.\n\n역사적으로 지구 자기장은 수십만 년마다 극성이 뒤바뀌는 '지자기 역전' 현상을 보입니다.");
+        }
+    </script>
+</body>
+</html>
