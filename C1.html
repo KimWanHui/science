@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>페트병 속 풍선 실험 시뮬레이션 - 기체의 성질 탐구</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .achievement-box {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .achievement-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .control-panel h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        .slider-input {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .value-display {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            margin-top: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .simulation-area {
+            position: relative;
+            background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 600px;
+            border: 3px solid #667eea;
+        }
+
+        .bottle-container {
+            position: relative;
+            width: 200px;
+            height: 400px;
+            margin: 50px auto;
+        }
+
+        .bottle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                rgba(200, 230, 255, 0.3) 0%,
+                rgba(150, 200, 255, 0.4) 100%);
+            border: 4px solid #2196F3;
+            border-radius: 20px 20px 30px 30px;
+            overflow: hidden;
+        }
+
+        .bottle-neck {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 50px;
+            background: linear-gradient(to bottom, 
+                rgba(150, 200, 255, 0.4) 0%,
+                rgba(200, 230, 255, 0.3) 100%);
+            border: 4px solid #2196F3;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .hole {
+            position: absolute;
+            top: 50%;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            background: #ff5722;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.5s;
+            box-shadow: 0 0 10px #ff5722;
+        }
+
+        .hole.visible {
+            opacity: 1;
+        }
+
+        .balloon {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #ff6b9d, #c44569);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transition: all 1s ease;
+            border: 2px solid #a33251;
+        }
+
+        .balloon.inflated {
+            width: 140px;
+            height: 180px;
+            bottom: 100px;
+        }
+
+        .balloon-string {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 30px;
+            background: #333;
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(33, 150, 243, 0.6);
+            border-radius: 50%;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(20px, -20px); }
+            50% { transform: translate(-20px, 20px); }
+            75% { transform: translate(20px, 20px); }
+        }
+
+        .pressure-gauge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            min-width: 150px;
+        }
+
+        .pressure-gauge h3 {
+            font-size: 0.9em;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .gauge-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .info-panel {
+            grid-column: 1 / -1;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .info-panel h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .info-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .particle-explanation {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            max-width: 250px;
+        }
+
+        .particle-explanation h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .particle-explanation p {
+            font-size: 0.85em;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        .quiz-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .quiz-section h2 {
+            color: #2d3436;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .question {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #fdcb6e;
+        }
+
+        .question p {
+            font-weight: bold;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe6e9;
+            border-radius: 5px;
+            font-size: 1em;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .feedback {
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback.hint {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .comparison-chart {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 200px;
+            margin-top: 20px;
+        }
+
+        .chart-bar {
+            width: 150px;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            transition: height 1s ease;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .chart-label {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            border: 3px solid #667eea;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .status-message.show {
+            display: block;
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎈 페트병 속 풍선 실험 시뮬레이션</h1>
+            <p>중학교 1학년 과학 - 기체의 성질 탐구</p>
+            <div class="achievement-box">
+                <strong>📚 성취기준</strong>
+                중1 과학 4-1-1: 기체가 부피를 차지하고 공간을 채운다는 것을 다양한 현상에서 찾아 설명한다.
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <h2>⚙️ 실험 조건 설정</h2>
+                
+                <div class="control-group">
+                    <label>🔧 페트병에 구멍 뚫기</label>
+                    <div class="switch-container">
+                        <span>구멍 없음</span>
+                        <label class="switch">
+                            <input type="checkbox" id="holeSwitch">
+                            <span class="slider"></span>
+                        </label>
+                        <span>구멍 있음</span>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #6c757d;">
+                        💡 구멍을 뚫으면 페트병 외부와 내부의 공기가 이동할 수 있습니다.
+                    </p>
+                </div>
+
+                <div class="control-group">
+                    <label>🎯 구멍의 크기 (고급 모드)</label>
+                    <div class="slider-container">
+                        <input type="range" id="holeSizeSlider" class="slider-input" 
+                               min="1" max="5" value="3" step="1">
+                        <div class="value-display">크기: <span id="holeSizeValue">3</span></div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>🌡️ 풍선 내부 초기 압력</label>
+                    <div class="slider-container">
+                        <input type="range" id="pressureSlider" class="slider-input" 
+                               min="80" max="120" value="100" step="5">
+                        <div class="value-display"><span id="pressureValue">100</span> kPa</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" id="startBtn">▶️ 실험 시작</button>
+                    <button class="btn btn-secondary" id="resetBtn">🔄 초기화</button>
+                </div>
+
+                <div class="info-box" style="margin-top: 20px;">
+                    <h3>🎯 실험 목표</h3>
+                    <p>기체가 공간을 차지하고 압력을 발생시키는 성질을 관찰하고, 
+                    페트병 내부의 공기가 풍선의 팽창을 어떻게 방해하는지 이해합니다.</p>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <div class="bottle-container">
+                    <div class="bottle-neck"></div>
+                    <div class="bottle">
+                        <div class="hole" id="holeIndicator"></div>
+                        <div class="particles" id="particlesContainer"></div>
+                        <div class="balloon" id="balloon">
+                            <div class="balloon-string"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pressure-gauge">
+                    <h3>📊 페트병 내부 압력</h3>
+                    <div class="gauge-bar">
+                        <div class="gauge-fill" id="gaugeFill">100 kPa</div>
+                    </div>
+                </div>
+
+                <div class="particle-explanation">
+                    <h4>💨 기체 입자 모형</h4>
+                    <p>파란 점들은 공기 분자를 나타냅니다. 
+                    분자들이 무작위로 운동하며 벽과 충돌하여 압력을 발생시킵니다.</p>
+                </div>
+
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <div class="info-panel">
+                <h2>📖 실험 결과 분석</h2>
+                <div class="info-content">
+                    <div class="info-box">
+                        <h3>🔍 관찰 내용</h3>
+                        <p id="observationText">실험을 시작하면 관찰 내용이 여기에 표시됩니다.</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>🧪 과학적 설명</h3>
+                        <p id="explanationText">실험 결과에 대한 과학적 설명이 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison-chart">
+                <h2>📊 풍선 부피 비교 그래프</h2>
+                <p style="color: #6c757d; margin-bottom: 10px;">
+                    구멍 유무에 따른 풍선의 최종 부피를 비교합니다.
+                </p>
+                <div class="chart-container">
+                    <div>
+                        <div class="chart-bar" id="chartNoHole" style="height: 50px;">50%</div>
+                        <div class="chart-label">구멍 없음</div>
+                    </div>
+                    <div>
+                        <div class="chart-bar" id="chartWithHole" style="height: 150px;">150%</div>
+                        <div class="chart-label">구멍 있음</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-section">
+                <h2>💭 생각해봅시다</h2>
+                
+                <div class="question">
+                    <p>1. 왜 구멍을 뚫었을 때만 풍선이 불어질까요?</p>
+                    <textarea class="answer-input" id="answer1" 
+                              placeholder="입자 수준에서 설명해보세요..."></textarea>
+                    <div class="feedback" id="feedback1"></div>
+                </div>
+
+                <div class="question">
+                    <p>2. 기체 압력이 없어진다는 것은 무슨 의미일까요?</p>
+                    <textarea class="answer-input" id="answer2" 
+                              placeholder="페트병 내부와 외부의 압력 관계를 생각해보세요..."></textarea>
+                    <div class="feedback" id="feedback2"></div>
+                </div>
+
+                <div class="question">
+                    <p>3. 이 현상을 과학 마술로 연출한다면 어떤 방식이 좋을까요?</p>
+                    <textarea class="answer-input" id="answer3" 
+                              placeholder="창의적인 아이디어를 자유롭게 작성해보세요..."></textarea>
+                    <div class="feedback" id="feedback3"></div>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 15px;" 
+                        onclick="checkAnswers()">📝 답변 확인하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let hasHole = false;
+        let holeSize = 3;
+        let balloonPressure = 100;
+        let bottlePressure = 100;
+        let isRunning = false;
+        let particles = [];
+
+        // DOM 요소
+        const holeSwitch = document.getElementById('holeSwitch');
+        const holeSizeSlider = document.getElementById('holeSizeSlider');
+        const pressureSlider = document.getElementById('pressureSlider');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const balloon = document.getElementById('balloon');
+        const holeIndicator = document.getElementById('holeIndicator');
+        const gaugeFill = document.getElementById('gaugeFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const observationText = document.getElementById('observationText');
+        const explanationText = document.getElementById('explanationText');
+        const particlesContainer = document.getElementById('particlesContainer');
+
+        // 이벤트 리스너
+        holeSwitch.addEventListener('change', (e) => {
+            hasHole = e.target.checked;
+            holeIndicator.classList.toggle('visible', hasHole);
+        });
+
+        holeSizeSlider.addEventListener('input', (e) => {
+            holeSize = parseInt(e.target.value);
+            document.getElementById('holeSizeValue').textContent = holeSize;
+        });
+
+        pressureSlider.addEventListener('input', (e) => {
+            balloonPressure = parseInt(e.target.value);
+            document.getElementById('pressureValue').textContent = balloonPressure;
+        });
+
+        startBtn.addEventListener('click', startExperiment);
+        resetBtn.addEventListener('click', resetExperiment);
+
+        // 입자 생성
+        function createParticles(count) {
+            particlesContainer.innerHTML = '';
+            particles = [];
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 90 + '%';
+                particle.style.top = Math.random() * 90 + '%';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.animationDuration = (2 + Math.random() * 2) + 's';
+                particlesContainer.appendChild(particle);
+                particles.push(particle);
+            }
+        }
+
+        // 실험 시작
+        function startExperiment() {
+            if (isRunning) return;
+            isRunning = true;
+            startBtn.disabled = true;
+            
+            showStatus('🔬 실험을 시작합니다...');
+            
+            // 초기 입자 생성
+            createParticles(hasHole ? 20 : 40);
+            
+            setTimeout(() => {
+                if (hasHole) {
+                    // 구멍이 있는 경우: 풍선 팽창
+                    balloon.classList.add('inflated');
+                    
+                    // 압력 감소 애니메이션
+                    let currentPressure = 100;
+                    const targetPressure = 100 - (holeSize * 10);
+                    const interval = setInterval(() => {
+                        if (currentPressure > targetPressure) {
+                            currentPressure -= 2;
+                            bottlePressure = currentPressure;
+                            updatePressureGauge(currentPressure);
+                            
+                            // 입자 수 감소
+                            if (particles.length > 10 && Math.random() > 0.7) {
+                                const particle = particles.pop();
+                                if (particle && particle.parentNode) {
+                                    particle.parentNode.removeChild(particle);
+                                }
+                            }
+                        } else {
+                            clearInterval(interval);
+                            showStatus('✅ 풍선이 팽창했습니다!');
+                            updateResults(true);
+                        }
+                    }, 100);
+                    
+                } else {
+                    // 구멍이 없는 경우: 풍선 팽창 실패
+                    showStatus('❌ 풍선이 불리지 않습니다!');
+                    
+                    // 압력 증가 시뮬레이션
+                    let currentPressure = 100;
+                    const targetPressure = 110;
+                    const interval = setInterval(() => {
+                        if (currentPressure < targetPressure) {
+                            currentPressure += 1;
+                            bottlePressure = currentPressure;
+                            updatePressureGauge(currentPressure);
+                        } else {
+                            clearInterval(interval);
+                            updateResults(false);
+                        }
+                    }, 100);
+                }
+                
+                setTimeout(() => {
+                    isRunning = false;
+                    startBtn.disabled = false;
+                }, 3000);
+            }, 500);
+        }
+
+        // 압력 게이지 업데이트
+        function updatePressureGauge(pressure) {
+            const percentage = ((pressure - 50) / 100) * 100;
+            gaugeFill.style.width = Math.max(0, Math.min(100, percentage)) + '%';
+            gaugeFill.textContent = pressure + ' kPa';
+        }
+
+        // 상태 메시지 표시
+        function showStatus(message) {
+            statusMessage.textContent = message;
+            statusMessage.classList.add('show');
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // 결과 업데이트
+        function updateResults(inflated) {
+            if (inflated) {
+                observationText.innerHTML = `
+                    <strong>✅ 풍선이 부풀어 올랐습니다!</strong><br><br>
+                    • 페트병에 구멍을 뚫자 풍선이 팽창하기 시작했습니다.<br>
+                    • 페트병 내부의 압력이 ${bottlePressure}kPa로 감소했습니다.<br>
+                    • 공기 입자의 수가 감소하는 것을 관찰할 수 있습니다.
+                `;
+                
+                explanationText.innerHTML = `
+                    <strong>🧪 과학적 원리</strong><br><br>
+                    구멍을 통해 페트병 내부의 공기가 외부로 빠져나가면서 
+                    <strong>내부 압력이 감소</strong>했습니다. 
+                    이에 따라 풍선 내부의 압력(${balloonPressure}kPa)이 
+                    페트병 내부 압력보다 높아져 <strong>풍선이 팽창</strong>할 수 있게 되었습니다.<br><br>
+                    💡 기체는 압력이 높은 곳에서 낮은 곳으로 이동합니다!
+                `;
+                
+                // 그래프 업데이트
+                document.getElementById('chartWithHole').style.height = '150px';
+                document.getElementById('chartWithHole').textContent = '150%';
+            } else {
+                observationText.innerHTML = `
+                    <strong>❌ 풍선이 부풀지 않았습니다!</strong><br><br>
+                    • 입으로 풍선을 불려고 해도 풍선이 팽창하지 않습니다.<br>
+                    • 페트병 내부의 압력이 ${bottlePressure}kPa로 오히려 증가했습니다.<br>
+                    • 공기 입자들이 페트병 내부에 갇혀 있습니다.
+                `;
+                
+                explanationText.innerHTML = `
+                    <strong>🧪 과학적 원리</strong><br><br>
+                    페트병이 밀폐되어 있어 풍선을 불 때 들어가려는 공기가 
+                    <strong>페트병 내부의 기존 공기를 압축</strong>시킵니다. 
+                    압축된 공기는 더 강한 압력으로 풍선을 밀어내어 
+                    <strong>풍선의 팽창을 방해</strong>합니다.<br><br>
+                    💡 기체는 부피를 차지하며, 압축되면 압력이 증가합니다! 
+                    (보일의 법칙: PV = 일정)
+                `;
+                
+                // 그래프 업데이트
+                document.getElementById('chartNoHole').style.height = '50px';
+                document.getElementById('chartNoHole').textContent = '50%';
+            }
+        }
+
+        // 초기화
+        function resetExperiment() {
+            balloon.classList.remove('inflated');
+            bottlePressure = 100;
+            updatePressureGauge(100);
+            createParticles(30);
+            
+            observationText.textContent = '실험을 시작하면 관찰 내용이 여기에 표시됩니다.';
+            explanationText.textContent = '실험 결과에 대한 과학적 설명이 여기에 표시됩니다.';
+            
+            // 그래프 초기화
+            document.getElementById('chartNoHole').style.height = '50px';
+            document.getElementById('chartNoHole').textContent = '50%';
+            document.getElementById('chartWithHole').style.height = '150px';
+            document.getElementById('chartWithHole').textContent = '150%';
+            
+            showStatus('🔄 실험이 초기화되었습니다');
+        }
+
+        // 답변 확인
+        function checkAnswers() {
+            const answer1 = document.getElementById('answer1').value.trim();
+            const answer2 = document.getElementById('answer2').value.trim();
+            const answer3 = document.getElementById('answer3').value.trim();
+            
+            const feedback1 = document.getElementById('feedback1');
+            const feedback2 = document.getElementById('feedback2');
+            const feedback3 = document.getElementById('feedback3');
+            
+            // 답변 1 피드백
+            if (answer1.length > 20) {
+                const keywords = ['입자', '분자', '압력', '이동', '빠져나가', '감소'];
+                const hasKeywords = keywords.some(keyword => answer1.includes(keyword));
+                
+                if (hasKeywords) {
+                    feedback1.className = 'feedback correct show';
+                    feedback1.innerHTML = '✅ 훌륭합니다! 구멍을 통해 페트병 내부의 공기 입자가 외부로 이동하여 압력이 감소한다는 점을 잘 설명했습니다.';
+                } else {
+                    feedback1.className = 'feedback hint show';
+                    feedback1.innerHTML = '💡 힌트: 공기 입자(분자)의 이동과 압력 변화에 대해 생각해보세요.';
+                }
+            } else {
+                feedback1.className = 'feedback hint show';
+                feedback1.innerHTML = '💡 더 자세하게 설명해주세요. 입자 수준에서 무슨 일이 일어나는지 생각해보세요.';
+            }
+            
+            // 답변 2 피드백
+            if (answer2.length > 20) {
+                const keywords = ['같', '평형', '외부', '내부', '균형'];
+                const hasKeywords = keywords.some(keyword => answer2.includes(keyword));
+                
+                if (hasKeywords) {
+                    feedback2.className = 'feedback correct show';
+                    feedback2.innerHTML = '✅ 정확합니다! 페트병 내부와 외부의 압력이 같아진다는 의미입니다.';
+                } else {
+                    feedback2.className = 'feedback hint show';
+                    feedback2.innerHTML = '💡 힌트: 페트병 내부 압력과 외부 대기압의 관계를 생각해보세요.';
+                }
+            } else {
+                feedback2.className = 'feedback hint show';
+                feedback2.innerHTML = '💡 페트병 내부와 외부의 압력 관계에 대해 설명해주세요.';
+            }
+            
+            // 답변 3 피드백 (창의성)
+            if (answer3.length > 20) {
+                feedback3.className = 'feedback correct show';
+                feedback3.innerHTML = '✅ 창의적인 아이디어입니다! 과학 원리를 재미있게 표현하는 것이 중요합니다.';
+            } else {
+                feedback3.className = 'feedback hint show';
+                feedback3.innerHTML = '💡 자유롭게 상상력을 발휘해보세요!';
+            }
+        }
+
+        // 초기 설정
+        window.onload = function() {
+            createParticles(30);
+            updatePressureGauge(100);
+        };
+    </script>
+</body>
+</html>
