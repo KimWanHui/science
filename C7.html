@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보일 법칙 인터랙티브 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .curriculum-info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .curriculum-info strong {
+            color: #667eea;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        .value-display {
+            min-width: 100px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .visualization-area {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #667eea;
+        }
+
+        .syringe-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #syringeCanvas {
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: #fafafa;
+            max-width: 100%;
+        }
+
+        .data-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .data-table-container, .graph-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f0f4ff;
+        }
+
+        tr:hover {
+            background: #e6ecff;
+        }
+
+        #graphCanvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            max-width: 100%;
+        }
+
+        .feedback-box {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border-left: 5px solid #f39c12;
+        }
+
+        .feedback-box h3 {
+            color: #d35400;
+            margin-bottom: 10px;
+        }
+
+        .feedback-box p {
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .quiz-section {
+            background: #e8f5e9;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border-left: 5px solid #4caf50;
+        }
+
+        .quiz-section h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+
+        .quiz-question {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .quiz-question p {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .quiz-options label {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-options label:hover {
+            background: #c8e6c9;
+        }
+
+        .quiz-options input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .particle-info {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .particle-info strong {
+            color: #e65100;
+        }
+
+        .law-formula {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px dashed #2196f3;
+        }
+
+        .law-formula h3 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .formula {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #0d47a1;
+            margin: 15px 0;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content, .data-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .highlight {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 보일 법칙 인터랙티브 시뮬레이션</h1>
+            <div class="curriculum-info">
+                <strong>📚 교육과정:</strong> 중학교 1학년 과학 - 기체의 성질과 상태 변화<br>
+                <strong>🎯 성취기준:</strong> [9과04-02] 압력에 따라 기체의 부피가 변하는 현상을 관찰하고, 입자 모형으로 설명할 수 있다.<br>
+                <strong>💡 학습목표:</strong> 압력 변화에 따른 기체 부피 변화를 관찰하고 입자 모형으로 설명할 수 있다.
+            </div>
+        </header>
+
+        <div class="law-formula">
+            <h3>보일 법칙 (Boyle's Law)</h3>
+            <div class="formula">P × V = 일정 (일정 온도에서)</div>
+            <p>일정한 온도에서 기체의 압력과 부피의 곱은 항상 일정합니다.</p>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <h2 style="color: #667eea; margin-bottom: 20px;">⚙️ 실험 조건 설정</h2>
+                
+                <div class="control-group">
+                    <label>🔽 외부 압력 (atm)</label>
+                    <div class="slider-container">
+                        <input type="range" id="pressureSlider" min="0.5" max="4" step="0.1" value="1">
+                        <div class="value-display" id="pressureValue">1.0 atm</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>📏 초기 부피 (L)</label>
+                    <div class="slider-container">
+                        <input type="range" id="volumeSlider" min="1" max="10" step="0.5" value="5">
+                        <div class="value-display" id="initialVolumeValue">5.0 L</div>
+                    </div>
+                </div>
+
+                <div class="particle-info">
+                    <strong>🌡️ 온도:</strong> 25°C (일정)<br>
+                    <strong>⚛️ 입자 수:</strong> 100개 (일정)<br>
+                    <strong>📊 현재 PV 값:</strong> <span id="pvValue">5.0</span>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="startSimulation()">▶️ 실험 시작</button>
+                    <button class="btn-secondary" onclick="resetSimulation()">🔄 초기화</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="addDataPoint()">📝 데이터 기록</button>
+                    <button class="btn-primary" onclick="exportReport()">📄 결과 저장</button>
+                </div>
+            </div>
+
+            <div class="visualization-area">
+                <h2 style="color: #667eea; margin-bottom: 15px;">👁️ 입자 모형 시각화</h2>
+                <div class="syringe-container">
+                    <canvas id="syringeCanvas" width="500" height="400"></canvas>
+                </div>
+                <div style="text-align: center; color: #666; margin-top: 10px;">
+                    <strong>현재 부피:</strong> <span id="currentVolume" style="color: #667eea; font-size: 1.3em;">5.0 L</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <div class="data-table-container">
+                <h3 style="color: #667eea;">📊 실험 데이터 테이블</h3>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>압력 (atm)</th>
+                            <th>부피 (L)</th>
+                            <th>P × V</th>
+                            <th>충돌 빈도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="graph-container">
+                <h3 style="color: #667eea;">📈 압력-부피 관계 그래프</h3>
+                <canvas id="graphCanvas" width="450" height="350"></canvas>
+            </div>
+        </div>
+
+        <div class="feedback-box" id="feedbackBox">
+            <h3>💬 학습 피드백</h3>
+            <p id="feedbackText">압력 슬라이더를 조작하여 기체의 부피 변화를 관찰해보세요!</p>
+        </div>
+
+        <div class="quiz-section">
+            <h3>🤔 개념 확인 문제</h3>
+            
+            <div class="quiz-question">
+                <p>Q1. 압력을 2배로 증가시키면 부피는 어떻게 변할까요?</p>
+                <div class="quiz-options">
+                    <label><input type="radio" name="q1" value="a"> 2배로 증가한다</label>
+                    <label><input type="radio" name="q1" value="b"> 2배로 감소한다</label>
+                    <label><input type="radio" name="q1" value="c"> 1/2로 감소한다</label>
+                    <label><input type="radio" name="q1" value="d"> 변하지 않는다</label>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <p>Q2. 압력을 높였을 때 부피가 감소하는 이유는 무엇일까요?</p>
+                <div class="quiz-options">
+                    <label><input type="radio" name="q2" value="a"> 입자의 개수가 감소하기 때문</label>
+                    <label><input type="radio" name="q2" value="b"> 입자의 크기가 작아지기 때문</label>
+                    <label><input type="radio" name="q2" value="c"> 입자 사이의 거리가 좁아지기 때문</label>
+                    <label><input type="radio" name="q2" value="d"> 입자의 운동 속도가 느려지기 때문</label>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <p>Q3. 일정한 온도에서 압력이 1.5 atm일 때 부피가 4 L라면, 압력이 3 atm일 때 부피는?</p>
+                <div class="quiz-options">
+                    <label><input type="radio" name="q3" value="a"> 1 L</label>
+                    <label><input type="radio" name="q3" value="b"> 2 L</label>
+                    <label><input type="radio" name="q3" value="c"> 6 L</label>
+                    <label><input type="radio" name="q3" value="d"> 8 L</label>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="checkAnswers()" style="margin-top: 15px;">✅ 정답 확인</button>
+            <div id="quizResult" style="margin-top: 15px; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let initialVolume = 5;
+        let initialPV = 5;
+        let pressure = 1;
+        let volume = 5;
+        let particles = [];
+        let dataPoints = [];
+        let animationId;
+
+        // Canvas 설정
+        const syringeCanvas = document.getElementById('syringeCanvas');
+        const syringeCtx = syringeCanvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+
+        // 입자 클래스
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.radius = 4;
+            }
+
+            update(maxX) {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 벽과의 충돌
+                if (this.x - this.radius < 50 || this.x + this.radius > maxX) {
+                    this.vx = -this.vx;
+                }
+                if (this.y - this.radius < 50 || this.y + this.radius > 350) {
+                    this.vy = -this.vy;
+                }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#667eea';
+                ctx.fill();
+                ctx.strokeStyle = '#4c5fd5';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // 초기화
+        function initParticles() {
+            particles = [];
+            const maxX = 50 + (volume / 10) * 400;
+            for (let i = 0; i < 100; i++) {
+                const x = 50 + Math.random() * (maxX - 50 - 10);
+                const y = 50 + Math.random() * 300;
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        // 주사기 그리기
+        function drawSyringe() {
+            syringeCtx.clearRect(0, 0, syringeCanvas.width, syringeCanvas.height);
+            
+            const syringeWidth = (volume / 10) * 400;
+            const maxX = 50 + syringeWidth;
+
+            // 주사기 몸통
+            syringeCtx.strokeStyle = '#333';
+            syringeCtx.lineWidth = 4;
+            syringeCtx.strokeRect(50, 50, syringeWidth, 300);
+
+            // 피스톤
+            syringeCtx.fillStyle = '#999';
+            syringeCtx.fillRect(maxX, 50, 10, 300);
+
+            // 압력 표시
+            syringeCtx.fillStyle = '#e74c3c';
+            syringeCtx.font = 'bold 16px Arial';
+            syringeCtx.fillText(`압력: ${pressure.toFixed(1)} atm`, maxX + 20, 200);
+
+            // 화살표 (압력 방향)
+            const arrowLength = pressure * 20;
+            syringeCtx.strokeStyle = '#e74c3c';
+            syringeCtx.lineWidth = 3;
+            syringeCtx.beginPath();
+            syringeCtx.moveTo(maxX + 15 + arrowLength, 200);
+            syringeCtx.lineTo(maxX + 15, 200);
+            syringeCtx.stroke();
+            
+            // 화살표 머리
+            syringeCtx.beginPath();
+            syringeCtx.moveTo(maxX + 15, 200);
+            syringeCtx.lineTo(maxX + 25, 195);
+            syringeCtx.lineTo(maxX + 25, 205);
+            syringeCtx.closePath();
+            syringeCtx.fillStyle = '#e74c3c';
+            syringeCtx.fill();
+
+            // 입자 그리기
+            particles.forEach(particle => {
+                particle.update(maxX);
+                particle.draw(syringeCtx);
+            });
+        }
+
+        // 그래프 그리기
+        function drawGraph() {
+            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+
+            const padding = 50;
+            const width = graphCanvas.width - padding * 2;
+            const height = graphCanvas.height - padding * 2;
+
+            // 축 그리기
+            graphCtx.strokeStyle = '#333';
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, padding);
+            graphCtx.lineTo(padding, padding + height);
+            graphCtx.lineTo(padding + width, padding + height);
+            graphCtx.stroke();
+
+            // 축 레이블
+            graphCtx.fillStyle = '#333';
+            graphCtx.font = 'bold 14px Arial';
+            graphCtx.fillText('부피 (L)', graphCanvas.width / 2 - 30, graphCanvas.height - 10);
+            graphCtx.save();
+            graphCtx.translate(15, graphCanvas.height / 2);
+            graphCtx.rotate(-Math.PI / 2);
+            graphCtx.fillText('압력 (atm)', -40, 0);
+            graphCtx.restore();
+
+            // 보일 법칙 곡선
+            graphCtx.strokeStyle = '#667eea';
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            for (let v = 1; v <= 10; v += 0.1) {
+                const p = initialPV / v;
+                if (p <= 4) {
+                    const x = padding + (v / 10) * width;
+                    const y = padding + height - (p / 4) * height;
+                    if (v === 1) {
+                        graphCtx.moveTo(x, y);
+                    } else {
+                        graphCtx.lineTo(x, y);
+                    }
+                }
+            }
+            graphCtx.stroke();
+
+            // 현재 점
+            const currentX = padding + (volume / 10) * width;
+            const currentY = padding + height - (pressure / 4) * height;
+            graphCtx.fillStyle = '#e74c3c';
+            graphCtx.beginPath();
+            graphCtx.arc(currentX, currentY, 8, 0, Math.PI * 2);
+            graphCtx.fill();
+
+            // 데이터 포인트
+            dataPoints.forEach(point => {
+                const x = padding + (point.volume / 10) * width;
+                const y = padding + height - (point.pressure / 4) * height;
+                graphCtx.fillStyle = '#27ae60';
+                graphCtx.beginPath();
+                graphCtx.arc(x, y, 5, 0, Math.PI * 2);
+                graphCtx.fill();
+            });
+
+            // 격자선
+            graphCtx.strokeStyle = '#ddd';
+            graphCtx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (i / 4) * height;
+                graphCtx.beginPath();
+                graphCtx.moveTo(padding, y);
+                graphCtx.lineTo(padding + width, y);
+                graphCtx.stroke();
+                graphCtx.fillStyle = '#666';
+                graphCtx.fillText((4 - i).toFixed(1), 20, y + 5);
+            }
+            for (let i = 0; i <= 10; i += 2) {
+                const x = padding + (i / 10) * width;
+                graphCtx.beginPath();
+                graphCtx.moveTo(x, padding);
+                graphCtx.lineTo(x, padding + height);
+                graphCtx.stroke();
+                graphCtx.fillStyle = '#666';
+                graphCtx.fillText(i.toString(), x - 5, padding + height + 20);
+            }
+        }
+
+        // 애니메이션
+        function animate() {
+            drawSyringe();
+            drawGraph();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 시뮬레이션 시작
+        function startSimulation() {
+            cancelAnimationFrame(animationId);
+            updateSimulation();
+            animate();
+            updateFeedback();
+        }
+
+        // 시뮬레이션 업데이트
+        function updateSimulation() {
+            pressure = parseFloat(document.getElementById('pressureSlider').value);
+            volume = initialPV / pressure;
+            
+            if (volume > 10) volume = 10;
+            if (volume < 1) volume = 1;
+
+            document.getElementById('pressureValue').textContent = pressure.toFixed(1) + ' atm';
+            document.getElementById('currentVolume').textContent = volume.toFixed(2) + ' L';
+            document.getElementById('pvValue').textContent = (pressure * volume).toFixed(2);
+
+            initParticles();
+        }
+
+        // 초기화
+        function resetSimulation() {
+            cancelAnimationFrame(animationId);
+            document.getElementById('pressureSlider').value = 1;
+            document.getElementById('volumeSlider').value = 5;
+            initialVolume = 5;
+            initialPV = 5;
+            pressure = 1;
+            volume = 5;
+            dataPoints = [];
+            
+            document.getElementById('dataTable').getElementsByTagName('tbody')[0].innerHTML = '';
+            document.getElementById('feedbackText').textContent = '실험이 초기화되었습니다. 다시 시작해보세요!';
+            
+            initParticles();
+            drawSyringe();
+            drawGraph();
+        }
+
+        // 데이터 포인트 추가
+        function addDataPoint() {
+            const collisionFreq = (pressure * 100).toFixed(0);
+            dataPoints.push({
+                pressure: pressure,
+                volume: volume,
+                pv: pressure * volume,
+                collision: collisionFreq
+            });
+
+            const tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${pressure.toFixed(2)}</td>
+                <td>${volume.toFixed(2)}</td>
+                <td>${(pressure * volume).toFixed(2)}</td>
+                <td>${collisionFreq}</td>
+            `;
+            
+            drawGraph();
+        }
+
+        // 피드백 업데이트
+        function updateFeedback() {
+            let feedback = '';
+            
+            if (pressure > 2) {
+                feedback = '💡 압력이 높아지면 기체 입자들이 더 좁은 공간에 밀집됩니다. 입자 사이의 거리가 가까워지면서 부피가 감소합니다!';
+            } else if (pressure < 0.8) {
+                feedback = '💡 압력이 낮아지면 기체 입자들이 더 넓은 공간으로 퍼져나갑니다. 입자 사이의 거리가 멀어지면서 부피가 증가합니다!';
+            } else {
+                feedback = '💡 압력과 부피의 곱(P×V)이 일정하게 유지되는 것을 확인하세요. 이것이 바로 보일 법칙입니다!';
+            }
+
+            if (Math.abs((pressure * volume) - initialPV) > 0.3) {
+                feedback += ' ⚠️ PV 값이 변했네요! 초기 부피를 다시 설정해보세요.';
+            }
+
+            document.getElementById('feedbackText').textContent = feedback;
+        }
+
+        // 퀴즈 정답 확인
+        function checkAnswers() {
+            const answers = {q1: 'c', q2: 'c', q3: 'b'};
+            let score = 0;
+            let total = 3;
+
+            for (let q in answers) {
+                const selected = document.querySelector(`input[name="${q}"]:checked`);
+                if (selected && selected.value === answers[q]) {
+                    score++;
+                }
+            }
+
+            const resultDiv = document.getElementById('quizResult');
+            const percentage = (score / total * 100).toFixed(0);
+            
+            if (score === total) {
+                resultDiv.innerHTML = `<div style="color: #27ae60; font-size: 1.2em;">🎉 완벽합니다! ${score}/${total} 정답! 보일 법칙을 완전히 이해했어요!</div>`;
+            } else {
+                resultDiv.innerHTML = `<div style="color: #e67e22; font-size: 1.1em;">📝 ${score}/${total} 정답 (${percentage}%) - 다시 한 번 실험을 진행하며 개념을 확인해보세요!</div>`;
+            }
+        }
+
+        // 결과 저장
+        function exportReport() {
+            let report = '=== 보일 법칙 실험 보고서 ===\n\n';
+            report += `실험 일시: ${new Date().toLocaleString('ko-KR')}\n`;
+            report += `학습 주제: 압력에 따른 기체 부피 변화\n\n`;
+            report += '--- 실험 데이터 ---\n';
+            report += '압력(atm)\t부피(L)\t\tP×V\t\t충돌빈도\n';
+            
+            dataPoints.forEach(point => {
+                report += `${point.pressure.toFixed(2)}\t\t${point.volume.toFixed(2)}\t\t${point.pv.toFixed(2)}\t\t${point.collision}\n`;
+            });
+
+            report += '\n--- 결론 ---\n';
+            report += '일정한 온도에서 기체의 압력과 부피의 곱은 일정하게 유지됩니다.\n';
+            report += '이는 보일 법칙(P × V = 일정)을 실험적으로 확인한 결과입니다.\n';
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '보일법칙_실험보고서.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('📄 실험 보고서가 저장되었습니다!');
+        }
+
+        // 이벤트 리스너
+        document.getElementById('pressureSlider').addEventListener('input', updateSimulation);
+        document.getElementById('volumeSlider').addEventListener('input', function() {
+            initialVolume = parseFloat(this.value);
+            initialPV = pressure * initialVolume;
+            document.getElementById('initialVolumeValue').textContent = initialVolume.toFixed(1) + ' L';
+            updateSimulation();
+        });
+
+        // 초기 실행
+        initParticles();
+        drawSyringe();
+        drawGraph();
+    </script>
+</body>
+</html>
