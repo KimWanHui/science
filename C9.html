@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기체의 온도와 부피 관계 시뮬레이션</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .achievement-standard {
+            background: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .achievement-standard strong {
+            color: #2980b9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .left-panel, .right-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .controls {
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 120px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            border: 2px solid #3498db;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-start {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-record {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-record:hover {
+            background: #d68910;
+            transform: translateY(-2px);
+        }
+
+        #particleCanvas {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #e8f8f5 0%, #d5f4e6 100%);
+            border: 3px solid #2c3e50;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            height: 350px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .data-table th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .data-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .feedback-section {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #f39c12;
+            margin-top: 20px;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            color: #d68910;
+            margin-bottom: 10px;
+        }
+
+        .quiz-section {
+            background: #e8f8f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .quiz-question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .quiz-question h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            background: #e8f4f8;
+            border-color: #3498db;
+        }
+
+        .quiz-option.selected {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .quiz-option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .quiz-option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .formula-box {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .real-life-examples {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .example-card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .example-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .real-life-examples {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 기체의 온도와 부피 관계 시뮬레이션</h1>
+        <p class="subtitle">샤를의 법칙(Charles's Law)을 입자 모형으로 이해하기</p>
+
+        <div class="achievement-standard">
+            <strong>성취기준:</strong> [중1 과학 4-3-01] 기체의 부피가 온도에 따라 달라지는 현상을 관찰하고, 입자 운동으로 설명한다.
+        </div>
+
+        <div class="formula-box">
+            샤를의 법칙: V ∝ T &nbsp;&nbsp;|&nbsp;&nbsp; V₁/T₁ = V₂/T₂ &nbsp;&nbsp;|&nbsp;&nbsp; 절대온도(K) = 섭씨온도(℃) + 273
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <h2 class="section-title">⚙️ 실험 조작</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>온도 (℃)</label>
+                        <div class="slider-container">
+                            <input type="range" id="tempSlider" min="-50" max="200" value="20" step="1">
+                            <div class="value-display" id="tempDisplay">20 ℃ (293 K)</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>초기 부피 (mL)</label>
+                        <input type="number" id="initialVolume" value="100" min="50" max="200" step="10">
+                    </div>
+
+                    <div class="control-group">
+                        <label>압력 (고정)</label>
+                        <input type="text" value="1 atm (일정)" disabled style="background: #ecf0f1; color: #7f8c8d;">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-start" onclick="startSimulation()">▶️ 시작</button>
+                    <button class="btn-record" onclick="recordData()">📊 데이터 기록</button>
+                    <button class="btn-reset" onclick="resetSimulation()">🔄 초기화</button>
+                </div>
+
+                <div class="info-display">
+                    <div class="info-box">
+                        <div class="info-label">현재 온도</div>
+                        <div class="info-value" id="currentTemp">20 ℃</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">현재 부피</div>
+                        <div class="info-value" id="currentVolume">100 mL</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">절대온도</div>
+                        <div class="info-value" id="absoluteTemp">293 K</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">입자 속도</div>
+                        <div class="info-value" id="particleSpeed">보통</div>
+                    </div>
+                </div>
+
+                <h2 class="section-title">📋 실험 데이터</h2>
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>순번</th>
+                            <th>온도 (℃)</th>
+                            <th>온도 (K)</th>
+                            <th>부피 (mL)</th>
+                            <th>V/T</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="right-panel">
+                <h2 class="section-title">🎯 입자 모형 시각화</h2>
+                <canvas id="particleCanvas"></canvas>
+
+                <div class="feedback-section">
+                    <div class="feedback-title">💡 관찰 포인트</div>
+                    <div id="feedbackText">
+                        온도를 조절하여 기체 입자의 운동과 부피 변화를 관찰해보세요.
+                        온도가 올라가면 입자가 더 빠르게 움직이고, 용기 벽에 더 자주 충돌합니다.
+                    </div>
+                </div>
+
+                <h2 class="section-title" style="margin-top: 20px;">📈 실시간 그래프</h2>
+                <div class="chart-container">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-section">
+            <h2 class="section-title">🎓 개념 확인 퀴즈</h2>
+            
+            <div class="quiz-question">
+                <h3>1. 온도가 올라갈 때 기체의 부피는 어떻게 변하나요?</h3>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, 1, true)">증가한다 (입자 운동 에너지 증가로 더 넓은 공간 차지)</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 1, false)">감소한다</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 1, false)">변하지 않는다</div>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <h3>2. 샤를의 법칙에서 부피는 무엇에 정비례하나요?</h3>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, 2, false)">섭씨 온도 (℃)</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 2, true)">절대 온도 (K)</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 2, false)">압력</div>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <h3>3. 온도가 273K에서 546K로 두 배가 되면 부피는?</h3>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, 3, false)">절반이 된다</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 3, true)">두 배가 된다 (V ∝ T 관계)</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, 3, false)">변하지 않는다</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title" style="margin-top: 30px;">🌍 실생활 적용 사례</h2>
+        <div class="real-life-examples">
+            <div class="example-card">
+                <div class="example-icon">🏓</div>
+                <h4>탁구공 부풀리기</h4>
+                <p>찌그러진 탁구공을 뜨거운 물에 넣으면 내부 공기가 팽창하여 다시 둥글게 됩니다.</p>
+            </div>
+            <div class="example-card">
+                <div class="example-icon">🚗</div>
+                <h4>여름철 타이어</h4>
+                <p>여름철 높은 온도에서 타이어 내부 공기가 팽창하여 압력이 증가합니다.</p>
+            </div>
+            <div class="example-card">
+                <div class="example-icon">🎈</div>
+                <h4>열기구의 원리</h4>
+                <p>공기를 가열하면 부피가 증가하고 밀도가 작아져 열기구가 상승합니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let canvas, ctx;
+        let particles = [];
+        let temperature = 20; // 섭씨
+        let initialVolume = 100;
+        let currentVolume = 100;
+        let animationId;
+        let chart;
+        let dataPoints = [];
+        let recordCount = 0;
+
+        // 초기화
+        window.onload = function() {
+            canvas = document.getElementById('particleCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            initializeParticles();
+            setupChart();
+            updateDisplay();
+            animate();
+        };
+
+        // 입자 초기화
+        function initializeParticles() {
+            particles = [];
+            const numParticles = 50;
+            
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    radius: 6
+                });
+            }
+        }
+
+        // 차트 설정
+        function setupChart() {
+            const chartCanvas = document.getElementById('volumeChart');
+            chart = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: '부피 (mL)',
+                        data: [],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '절대온도 (K)',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: 200,
+                            max: 500
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '부피 (mL)',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: 0,
+                            max: 200
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `온도: ${context.parsed.x}K, 부피: ${context.parsed.y}mL`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 온도 슬라이더 이벤트
+        document.getElementById('tempSlider').addEventListener('input', function(e) {
+            temperature = parseInt(e.target.value);
+            updateDisplay();
+            updateParticleSpeed();
+        });
+
+        // 초기 부피 변경 이벤트
+        document.getElementById('initialVolume').addEventListener('input', function(e) {
+            initialVolume = parseInt(e.target.value);
+            calculateVolume();
+            updateDisplay();
+        });
+
+        // 시뮬레이션 시작
+        function startSimulation() {
+            calculateVolume();
+            updateDisplay();
+            updateParticleSpeed();
+            updateFeedback();
+        }
+
+        // 부피 계산 (샤를의 법칙)
+        function calculateVolume() {
+            const T1 = 293; // 20℃ = 293K (기준)
+            const T2 = temperature + 273; // 현재 온도를 절대온도로 변환
+            currentVolume = Math.round((initialVolume * T2) / T1);
+        }
+
+        // 입자 속도 업데이트
+        function updateParticleSpeed() {
+            const speedFactor = (temperature + 273) / 293;
+            
+            particles.forEach(particle => {
+                const currentSpeed = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
+                const targetSpeed = speedFactor * 2;
+                const ratio = targetSpeed / (currentSpeed || 1);
+                
+                particle.vx *= ratio;
+                particle.vy *= ratio;
+            });
+        }
+
+        // 화면 표시 업데이트
+        function updateDisplay() {
+            const absoluteTemp = temperature + 273;
+            
+            document.getElementById('tempDisplay').textContent = `${temperature} ℃ (${absoluteTemp} K)`;
+            document.getElementById('currentTemp').textContent = `${temperature} ℃`;
+            document.getElementById('absoluteTemp').textContent = `${absoluteTemp} K`;
+            document.getElementById('currentVolume').textContent = `${currentVolume} mL`;
+            
+            // 입자 속도 표시
+            let speedText = '느림';
+            if (temperature > 50) speedText = '빠름';
+            else if (temperature > 0) speedText = '보통';
+            document.getElementById('particleSpeed').textContent = speedText;
+        }
+
+        // 피드백 업데이트
+        function updateFeedback() {
+            let feedback = '';
+            
+            if (temperature < 0) {
+                feedback = '❄️ 온도가 매우 낮습니다. 입자들이 천천히 움직이며 부피가 감소합니다. 절대온도에 가까워질수록 입자 운동이 거의 멈춥니다.';
+            } else if (temperature < 50) {
+                feedback = '🌡️ 상온 범위입니다. 입자들이 적당한 속도로 움직이고 있습니다. 온도를 높여보면서 부피 변화를 관찰해보세요.';
+            } else if (temperature < 100) {
+                feedback = '🔥 온도가 상승했습니다. 입자들이 빠르게 움직이며 용기 벽에 더 자주 충돌합니다. 이로 인해 부피가 증가합니다.';
+            } else {
+                feedback = '🌋 온도가 매우 높습니다. 입자들의 운동 에너지가 크게 증가하여 부피가 크게 팽창합니다. 실제로는 기체가 용기를 벗어날 수 있습니다.';
+            }
+            
+            document.getElementById('feedbackText').textContent = feedback;
+        }
+
+        // 데이터 기록
+        function recordData() {
+            recordCount++;
+            const absoluteTemp = temperature + 273;
+            const ratio = (currentVolume / absoluteTemp).toFixed(3);
+            
+            // 테이블에 추가
+            const tbody = document.getElementById('dataBody');
+            const row = tbody.insertRow(0);
+            row.innerHTML = `
+                <td>${recordCount}</td>
+                <td>${temperature}</td>
+                <td>${absoluteTemp}</td>
+                <td>${currentVolume}</td>
+                <td>${ratio}</td>
+            `;
+            
+            // 그래프에 추가
+            chart.data.datasets[0].data.push({
+                x: absoluteTemp,
+                y: currentVolume
+            });
+            chart.update();
+            
+            // 최근 5개 데이터의 평균 비율 계산
+            const recentData = Array.from(tbody.rows).slice(0, 5);
+            if (recentData.length >= 3) {
+                const ratios = recentData.map(row => parseFloat(row.cells[4].textContent));
+                const avgRatio = ratios.reduce((a, b) => a + b) / ratios.length;
+                const variance = ratios.reduce((sum, val) => sum + Math.pow(val - avgRatio, 2), 0) / ratios.length;
+                
+                if (variance < 0.001) {
+                    showAchievement('🎉 샤를의 법칙 확인! V/T 비율이 일정합니다!');
+                }
+            }
+        }
+
+        // 성취 알림
+        function showAchievement(message) {
+            const feedback = document.getElementById('feedbackText');
+            const originalText = feedback.textContent;
+            feedback.textContent = message;
+            feedback.style.fontWeight = 'bold';
+            feedback.style.color = '#27ae60';
+            
+            setTimeout(() => {
+                feedback.textContent = originalText;
+                feedback.style.fontWeight = 'normal';
+                feedback.style.color = 'inherit';
+            }, 3000);
+        }
+
+        // 초기화
+        function resetSimulation() {
+            temperature = 20;
+            initialVolume = 100;
+            currentVolume = 100;
+            recordCount = 0;
+            
+            document.getElementById('tempSlider').value = 20;
+            document.getElementById('initialVolume').value = 100;
+            document.getElementById('dataBody').innerHTML = '';
+            
+            chart.data.datasets[0].data = [];
+            chart.update();
+            
+            initializeParticles();
+            updateDisplay();
+            updateFeedback();
+        }
+
+        // 입자 애니메이션
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 용기 크기 계산 (부피에 비례)
+            const containerScale = Math.sqrt(currentVolume / initialVolume);
+            const containerWidth = canvas.width * 0.9 * containerScale;
+            const containerHeight = canvas.height * 0.9 * containerScale;
+            const containerX = (canvas.width - containerWidth) / 2;
+            const containerY = (canvas.height - containerHeight) / 2;
+            
+            // 용기 그리기
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(containerX, containerY, containerWidth, containerHeight);
+            
+            // 입자 업데이트 및 그리기
+            particles.forEach(particle => {
+                // 경계 충돌
+                if (particle.x < containerX || particle.x > containerX + containerWidth) {
+                    particle.vx *= -1;
+                    particle.x = Math.max(containerX, Math.min(particle.x, containerX + containerWidth));
+                }
+                if (particle.y < containerY || particle.y > containerY + containerHeight) {
+                    particle.vy *= -1;
+                    particle.y = Math.max(containerY, Math.min(particle.y, containerY + containerHeight));
+                }
+                
+                // 위치 업데이트
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                
+                // 입자 그리기
+                const speed = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
+                const hue = Math.min(240 - speed * 20, 240);
+                ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 운동 방향 표시
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(particle.x, particle.y);
+                ctx.lineTo(particle.x + particle.vx * 3, particle.y + particle.vy * 3);
+                ctx.stroke();
+            });
+            
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 퀴즈 정답 체크
+        function checkAnswer(element, questionNum, isCorrect) {
+            const options = element.parentElement.children;
+            
+            // 이미 답변한 경우 무시
+            if (element.classList.contains('correct') || element.classList.contains('incorrect')) {
+                return;
+            }
+            
+            // 모든 옵션에 정답/오답 표시
+            Array.from(options).forEach(option => {
+                option.style.pointerEvents = 'none';
+                if (option === element) {
+                    option.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+            });
+            
+            // 정답인 경우 피드백
+            if (isCorrect) {
+                setTimeout(() => {
+                    alert('✅ 정답입니다! 샤를의 법칙을 잘 이해하고 있습니다.');
+                }, 100);
+            } else {
+                setTimeout(() => {
+                    alert('❌ 다시 생각해보세요. 시뮬레이션을 통해 온도와 부피의 관계를 관찰해보세요.');
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>
