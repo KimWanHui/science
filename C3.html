@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아세톤 증발 시뮬레이션 - 입자의 운동</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .curriculum-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .curriculum-info h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .simulation-area {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: white;
+            border: 3px solid #2d3748;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        #simulationCanvas {
+            display: block;
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .scale-display {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 3px solid #2d3748;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .scale-display .label {
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .scale-display .mass {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .scale-display .unit {
+            font-size: 0.9em;
+            color: #718096;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .controls h3 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .value-display {
+            min-width: 70px;
+            text-align: center;
+            font-weight: bold;
+            color: #2d3748;
+            background: #f7fafc;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(72,187,120,0.4);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            color: white;
+        }
+
+        .btn-pause:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(237,137,54,0.4);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(245,101,101,0.4);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102,126,234,0.4);
+        }
+
+        .stats-panel {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .stats-panel h4 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .stat-label {
+            color: #4a5568;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .quiz-section {
+            background: white;
+            padding: 30px;
+            border-top: 3px solid #667eea;
+        }
+
+        .quiz-section h3 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .quiz-question {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-question p {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            padding: 15px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .quiz-option.selected {
+            border-color: #667eea;
+            background: #ebf4ff;
+        }
+
+        .quiz-option.correct {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .quiz-option.incorrect {
+            border-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            color: #22543d;
+        }
+
+        .feedback.incorrect {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            color: #742a2a;
+        }
+
+        .explanation-box {
+            background: #ebf8ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4299e1;
+            margin-top: 20px;
+        }
+
+        .explanation-box h4 {
+            color: #2c5282;
+            margin-bottom: 10px;
+        }
+
+        .explanation-box p {
+            color: #2d3748;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 아세톤 증발 시뮬레이션</h1>
+            <p>입자의 운동으로 이해하는 물질의 변화</p>
+        </div>
+
+        <div class="curriculum-info">
+            <h3>📚 교육과정 정보</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>학년/과목</strong>
+                    중학교 1학년 / 과학
+                </div>
+                <div class="info-item">
+                    <strong>단원</strong>
+                    기체의 성질
+                </div>
+                <div class="info-item">
+                    <strong>성취기준</strong>
+                    [9과04-01] 물질을 이루는 입자의 운동과 확산, 증발 현상 설명
+                </div>
+                <div class="info-item">
+                    <strong>학습 목표</strong>
+                    입자 모형을 통해 증발 현상의 원리 이해
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="simulationCanvas" width="800" height="600"></canvas>
+                    <div class="scale-display">
+                        <div class="label">전자저울</div>
+                        <div class="mass" id="massDisplay">5.00</div>
+                        <div class="unit">g</div>
+                    </div>
+                </div>
+
+                <div class="explanation-box">
+                    <h4>💡 실험 설명</h4>
+                    <p>
+                        거름종이 위에 아세톤을 떨어뜨리고 전자저울로 질량을 측정합니다. 
+                        시간이 지남에 따라 아세톤 입자들이 공기 중으로 퍼져나가면서 질량이 감소합니다.
+                        파란색 입자는 아세톤 분자를 나타내며, 이들은 끊임없이 무작위로 운동하고 있습니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h3>⚙️ 실험 조건</h3>
+                
+                <div class="control-group">
+                    <label>시간 (초)</label>
+                    <div class="slider-container">
+                        <input type="range" id="timeSlider" min="0" max="300" value="0" step="1">
+                        <div class="value-display" id="timeValue">0초</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>온도 (℃)</label>
+                    <div class="slider-container">
+                        <input type="range" id="tempSlider" min="10" max="40" value="25" step="5">
+                        <div class="value-display" id="tempValue">25℃</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>초기 입자 수</label>
+                    <div class="slider-container">
+                        <input type="range" id="particleSlider" min="50" max="200" value="100" step="10">
+                        <div class="value-display" id="particleValue">100개</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-start" id="startBtn">▶️ 시작</button>
+                    <button class="btn-pause" id="pauseBtn">⏸️ 일시정지</button>
+                    <button class="btn-reset" id="resetBtn">🔄 초기화</button>
+                    <button class="btn-save" id="saveBtn">💾 결과 저장</button>
+                </div>
+
+                <div class="stats-panel">
+                    <h4>📊 실시간 데이터</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">남은 입자 수</span>
+                        <span class="stat-value" id="particleCount">100개</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">증발률</span>
+                        <span class="stat-value" id="evapRate">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">질량 감소량</span>
+                        <span class="stat-value" id="massLoss">0.00g</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">평균 입자 속도</span>
+                        <span class="stat-value" id="avgSpeed">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-section">
+            <h3>🎯 학습 평가</h3>
+            
+            <div class="quiz-question" id="quiz1">
+                <p><strong>문제 1.</strong> 시간이 지남에 따라 전자저울의 질량이 줄어드는 이유는 무엇인가요?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" data-quiz="1" data-answer="false">
+                        ① 아세톤 입자가 분해되어 사라지기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="1" data-answer="true">
+                        ② 아세톤 입자가 공기 중으로 퍼져나가기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="1" data-answer="false">
+                        ③ 아세톤 입자가 거름종이에 흡수되기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="1" data-answer="false">
+                        ④ 전자저울의 측정 오류 때문이다
+                    </div>
+                </div>
+                <div class="feedback" id="feedback1"></div>
+            </div>
+
+            <div class="quiz-question" id="quiz2">
+                <p><strong>문제 2.</strong> 온도가 높아지면 증발 속도가 빨라지는 이유는 무엇인가요?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" data-quiz="2" data-answer="false">
+                        ① 입자의 개수가 늘어나기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="2" data-answer="true">
+                        ② 입자의 운동 에너지가 커져 더 활발하게 운동하기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="2" data-answer="false">
+                        ③ 입자의 크기가 작아지기 때문이다
+                    </div>
+                    <div class="quiz-option" data-quiz="2" data-answer="false">
+                        ④ 공기의 압력이 낮아지기 때문이다
+                    </div>
+                </div>
+                <div class="feedback" id="feedback2"></div>
+            </div>
+
+            <div class="quiz-question" id="quiz3">
+                <p><strong>문제 3.</strong> (서술형) 시뮬레이션에서 관찰한 내용을 바탕으로, 입자 모형을 사용하여 아세톤의 증발 현상을 설명해보세요.</p>
+                <textarea id="essay3" rows="6" style="width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; font-family: inherit; resize: vertical;"></textarea>
+                <div class="explanation-box" style="margin-top: 15px;">
+                    <h4>✅ 모범 답안 요소</h4>
+                    <ul style="margin-left: 20px; line-height: 2;">
+                        <li>아세톤은 눈에 보이지 않는 작은 입자로 이루어져 있다</li>
+                        <li>입자들은 끊임없이 무작위로 운동한다</li>
+                        <li>거름종이 위의 입자들이 공기 중으로 퍼져나간다</li>
+                        <li>입자가 빠져나가면서 전자저울의 질량이 감소한다</li>
+                        <li>이러한 현상을 증발이라고 한다</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="explanation-box">
+                <h4>🔬 과학 원리: 기체 분자 운동론</h4>
+                <p>
+                    <strong>1. 입자의 운동:</strong> 모든 물질을 이루는 입자는 끊임없이 운동합니다.<br>
+                    <strong>2. 온도와 운동 에너지:</strong> 온도가 높을수록 입자의 평균 운동 에너지가 큽니다.<br>
+                    <strong>3. 증발:</strong> 액체 입자가 표면에서 기체로 상태가 변하는 현상입니다.<br>
+                    <strong>4. 확산:</strong> 입자가 농도가 높은 곳에서 낮은 곳으로 퍼지는 현상입니다.<br>
+                    <strong>5. 질량 보존:</strong> 아세톤이 사라진 것처럼 보이지만, 실제로는 공기 중으로 퍼진 것입니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 캔버스 설정
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 시뮬레이션 변수
+        let particles = [];
+        let isRunning = false;
+        let timeElapsed = 0;
+        let initialParticleCount = 100;
+        let temperature = 25;
+        let animationId = null;
+
+        // 거름종이 영역
+        const filterPaper = {
+            x: 300,
+            y: 250,
+            radius: 100
+        };
+
+        // 입자 클래스
+        class Particle {
+            constructor(x, y, temp) {
+                this.x = x;
+                this.y = y;
+                this.radius = 3;
+                this.baseSpeed = 0.5 + (temp - 10) / 60; // 온도에 따른 속도
+                this.angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(this.angle) * this.baseSpeed;
+                this.vy = Math.sin(this.angle) * this.baseSpeed;
+                this.alpha = 1;
+                this.inPaper = true;
+            }
+
+            update() {
+                // 무작위 운동 (브라운 운동)
+                this.angle += (Math.random() - 0.5) * 0.2;
+                this.vx = Math.cos(this.angle) * this.baseSpeed;
+                this.vy = Math.sin(this.angle) * this.baseSpeed;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 거름종이 영역 확인
+                const distFromCenter = Math.sqrt(
+                    Math.pow(this.x - filterPaper.x, 2) + 
+                    Math.pow(this.y - filterPaper.y, 2)
+                );
+
+                if (distFromCenter > filterPaper.radius) {
+                    this.inPaper = false;
+                    // 거름종이 밖으로 나간 입자는 투명도 감소
+                    this.alpha -= 0.005;
+                }
+
+                // 캔버스 경계 처리 (부드러운 반사)
+                if (this.x < 0 || this.x > canvas.width) {
+                    this.vx *= -1;
+                    this.x = Math.max(0, Math.min(canvas.width, this.x));
+                }
+                if (this.y < 0 || this.y > canvas.height) {
+                    this.vy *= -1;
+                    this.y = Math.max(0, Math.min(canvas.height, this.y));
+                }
+            }
+
+            draw() {
+                if (this.alpha > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha;
+                    
+                    // 입자 그리기 (그라디언트 효과)
+                    const gradient = ctx.createRadialGradient(
+                        this.x, this.y, 0,
+                        this.x, this.y, this.radius
+                    );
+                    gradient.addColorStop(0, '#4299e1');
+                    gradient.addColorStop(1, '#2b6cb0');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 외곽선
+                    ctx.strokeStyle = '#2c5282';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                }
+            }
+
+            isVisible() {
+                return this.alpha > 0.01;
+            }
+        }
+
+        // 초기화 함수
+        function initSimulation() {
+            particles = [];
+            const particleCount = parseInt(document.getElementById('particleSlider').value);
+            initialParticleCount = particleCount;
+            temperature = parseInt(document.getElementById('tempSlider').value);
+
+            // 거름종이 영역 내에 입자 배치
+            for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * filterPaper.radius * 0.8;
+                const x = filterPaper.x + Math.cos(angle) * distance;
+                const y = filterPaper.y + Math.sin(angle) * distance;
+                particles.push(new Particle(x, y, temperature));
+            }
+
+            timeElapsed = 0;
+            updateTimeSlider(0);
+            updateStats();
+        }
+
+        // 그리기 함수
+        function draw() {
+            // 배경
+            ctx.fillStyle = '#edf2f7';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 확산 영역 시각화 (히트맵 효과)
+            drawDiffusionArea();
+
+            // 거름종이 그리기
+            ctx.save();
+            ctx.fillStyle = '#f7fafc';
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(filterPaper.x, filterPaper.y, filterPaper.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 거름종이 라벨
+            ctx.fillStyle = '#4a5568';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('거름종이', filterPaper.x, filterPaper.y);
+            
+            ctx.restore();
+
+            // 입자 그리기
+            particles.forEach(particle => particle.draw());
+
+            // 정보 표시
+            drawInfo();
+        }
+
+        // 확산 영역 시각화
+        function drawDiffusionArea() {
+            // 입자 밀도 기반 히트맵
+            const cellSize = 40;
+            const cols = Math.ceil(canvas.width / cellSize);
+            const rows = Math.ceil(canvas.height / cellSize);
+            const density = Array(rows).fill(0).map(() => Array(cols).fill(0));
+
+            particles.forEach(p => {
+                if (p.alpha > 0.1) {
+                    const col = Math.floor(p.x / cellSize);
+                    const row = Math.floor(p.y / cellSize);
+                    if (row >= 0 && row < rows && col >= 0 && col < cols) {
+                        density[row][col]++;
+                    }
+                }
+            });
+
+            const maxDensity = Math.max(...density.flat());
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (density[row][col] > 0) {
+                        const alpha = (density[row][col] / maxDensity) * 0.3;
+                        ctx.fillStyle = `rgba(102, 126, 234, ${alpha})`;
+                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        }
+
+        // 정보 표시
+        function drawInfo() {
+            // 시간 표시
+            ctx.fillStyle = '#2d3748';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`⏱️ 경과 시간: ${timeElapsed.toFixed(1)}초`, 20, 30);
+            
+            // 온도 표시
+            ctx.fillText(`🌡️ 온도: ${temperature}℃`, 20, 60);
+
+            // 범례
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#4299e1';
+            ctx.beginPath();
+            ctx.arc(30, 90, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2d3748';
+            ctx.fillText('아세톤 입자', 45, 95);
+        }
+
+        // 업데이트 함수
+        function update() {
+            if (!isRunning) return;
+
+            particles.forEach(particle => particle.update());
+            particles = particles.filter(particle => particle.isVisible());
+
+            timeElapsed += 0.1;
+            updateTimeSlider(timeElapsed);
+            updateStats();
+
+            draw();
+
+            if (particles.length > 0) {
+                animationId = requestAnimationFrame(update);
+            } else {
+                isRunning = false;
+                alert('모든 아세톤이 증발했습니다! 🎉\n입자들이 공기 중으로 완전히 퍼져나갔습니다.');
+            }
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const remainingParticles = particles.length;
+            const evaporationRate = ((initialParticleCount - remainingParticles) / initialParticleCount * 100).toFixed(1);
+            const currentMass = (5.0 * remainingParticles / initialParticleCount).toFixed(2);
+            const massLoss = (5.0 - currentMass).toFixed(2);
+            
+            // 평균 속도 계산
+            let avgSpeed = 0;
+            if (particles.length > 0) {
+                const totalSpeed = particles.reduce((sum, p) => {
+                    return sum + Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                }, 0);
+                avgSpeed = (totalSpeed / particles.length).toFixed(2);
+            }
+
+            document.getElementById('particleCount').textContent = `${remainingParticles}개`;
+            document.getElementById('evapRate').textContent = `${evaporationRate}%`;
+            document.getElementById('massDisplay').textContent = currentMass;
+            document.getElementById('massLoss').textContent = `${massLoss}g`;
+            document.getElementById('avgSpeed').textContent = avgSpeed > 0 ? `${avgSpeed} px/frame` : '-';
+        }
+
+        // 시간 슬라이더 업데이트
+        function updateTimeSlider(time) {
+            const slider = document.getElementById('timeSlider');
+            slider.value = Math.min(time, 300);
+            document.getElementById('timeValue').textContent = `${Math.floor(time)}초`;
+        }
+
+        // 이벤트 리스너
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                update();
+            }
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            initSimulation();
+            draw();
+        });
+
+        document.getElementById('tempSlider').addEventListener('input', (e) => {
+            temperature = parseInt(e.target.value);
+            document.getElementById('tempValue').textContent = `${temperature}℃`;
+            
+            // 온도 변경 시 입자 속도 업데이트
+            particles.forEach(p => {
+                p.baseSpeed = 0.5 + (temperature - 10) / 60;
+            });
+        });
+
+        document.getElementById('particleSlider').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('particleValue').textContent = `${value}개`;
+        });
+
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('timeValue').textContent = `${value}초`;
+        });
+
+        // 결과 저장 기능
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const report = generateReport();
+            downloadReport(report);
+        });
+
+        function generateReport() {
+            const remainingParticles = particles.length;
+            const evaporationRate = ((initialParticleCount - remainingParticles) / initialParticleCount * 100).toFixed(1);
+            const currentMass = (5.0 * remainingParticles / initialParticleCount).toFixed(2);
+
+            return `
+아세톤 증발 실험 결과 보고서
+========================================
+
+실험 일시: ${new Date().toLocaleString('ko-KR')}
+
+[실험 조건]
+- 초기 입자 수: ${initialParticleCount}개
+- 온도: ${temperature}℃
+- 경과 시간: ${timeElapsed.toFixed(1)}초
+
+[실험 결과]
+- 남은 입자 수: ${remainingParticles}개
+- 증발률: ${evaporationRate}%
+- 현재 질량: ${currentMass}g
+- 질량 감소량: ${(5.0 - currentMass).toFixed(2)}g
+
+[관찰 내용]
+1. 아세톤 입자는 끊임없이 무작위로 운동합니다.
+2. 시간이 지남에 따라 입자들이 거름종이 밖으로 퍼져나갑니다.
+3. 입자가 빠져나가면서 전자저울의 질량이 감소합니다.
+4. 온도가 높을수록 입자의 운동이 활발하여 증발이 빠릅니다.
+
+[결론]
+물질은 눈에 보이지 않는 작은 입자로 이루어져 있으며, 
+이 입자들의 운동이 증발과 같은 물질의 변화를 일으킵니다.
+아세톤이 사라진 것처럼 보이지만, 실제로는 공기 중으로 
+퍼져나간 것으로, 물질의 총량은 보존됩니다.
+========================================
+            `;
+        }
+
+        function downloadReport(content) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `아세톤_증발_실험_결과_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('실험 결과가 저장되었습니다! 📄');
+        }
+
+        // 퀴즈 기능
+        document.querySelectorAll('.quiz-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const quizNum = this.getAttribute('data-quiz');
+                const isCorrect = this.getAttribute('data-answer') === 'true';
+                const feedback = document.getElementById(`feedback${quizNum}`);
+                
+                // 선택 초기화
+                document.querySelectorAll(`[data-quiz="${quizNum}"]`).forEach(opt => {
+                    opt.classList.remove('selected', 'correct', 'incorrect');
+                });
+
+                // 선택 표시
+                this.classList.add('selected');
+                
+                if (isCorrect) {
+                    this.classList.add('correct');
+                    feedback.className = 'feedback show correct';
+                    feedback.innerHTML = '✅ <strong>정답입니다!</strong><br>입자들이 끊임없이 운동하면서 거름종이 밖으로 퍼져나가 질량이 감소합니다.';
+                } else {
+                    this.classList.add('incorrect');
+                    feedback.className = 'feedback show incorrect';
+                    feedback.innerHTML = '❌ <strong>다시 생각해보세요.</strong><br>입자 모형을 떠올려보세요. 입자들은 어디로 이동할까요?';
+                }
+            });
+        });
+
+        // 초기화
+        initSimulation();
+        draw();
+    </script>
+</body>
+</html>
