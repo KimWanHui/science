@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>입자의 운동과 기체 확산 시뮬레이션 - 중1 과학</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .achievement-box {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            height: fit-content;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .control-group h3::before {
+            content: "🔹";
+            margin-right: 8px;
+        }
+
+        .slider-container {
+            margin: 10px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .slider-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .radio-option.selected {
+            border-color: #667eea;
+            background: #e8edff;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-start {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+
+        .btn-compare {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-compare:hover {
+            background: #2980b9;
+        }
+
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            width: 100%;
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f4ff 100%);
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            flex: 1;
+            min-width: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .graphs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .graph-box {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .graph-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .feedback-panel {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .feedback-panel h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .feedback-panel p {
+            color: #856404;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .quiz-panel {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .quiz-panel h3 {
+            color: #0c5460;
+            margin-bottom: 15px;
+        }
+
+        .quiz-question {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .heatmap-gradient {
+            width: 200px;
+            height: 20px;
+            background: linear-gradient(to right, 
+                rgba(102, 126, 234, 0.1), 
+                rgba(102, 126, 234, 0.3), 
+                rgba(102, 126, 234, 0.6), 
+                rgba(102, 126, 234, 0.9));
+            border-radius: 10px;
+        }
+
+        .compare-mode {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .compare-mode.active {
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .graphs-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 입자의 운동과 기체 확산 시뮬레이션</h1>
+            <p>석고 방향제에서 향기가 퍼지는 현상을 입자의 운동으로 이해하기</p>
+            <div class="achievement-box">
+                <strong>성취기준:</strong> [9과04-01] 물질을 이루는 입자가 운동하고 있음을 확산, 증발 현상으로 설명할 수 있다.
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="control-group">
+                    <h3>온도 설정</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>온도</span>
+                            <span class="slider-value" id="tempValue">20°C (보통)</span>
+                        </div>
+                        <input type="range" id="temperature" min="0" max="40" value="20" step="10">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>입자 수</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>입자 개수</span>
+                            <span class="slider-value" id="particleValue">100개 (중간)</span>
+                        </div>
+                        <input type="range" id="particleCount" min="50" max="200" value="100" step="50">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>방향제 위치</h3>
+                    <div class="radio-group">
+                        <label class="radio-option selected">
+                            <input type="radio" name="position" value="center" checked>
+                            <span>중앙</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="position" value="corner">
+                            <span>왼쪽 구석</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="position" value="right">
+                            <span>오른쪽 모서리</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>공간의 밀폐 정도</h3>
+                    <div class="radio-group">
+                        <label class="radio-option selected">
+                            <input type="radio" name="closure" value="open" checked>
+                            <span>개방 (벽 없음)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="closure" value="semi">
+                            <span>반개방 (일부 개방)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="closure" value="closed">
+                            <span>밀폐 (완전 밀폐)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-start" onclick="startSimulation()">▶ 시작</button>
+                    <button class="btn-reset" onclick="resetSimulation()">🔄 초기화</button>
+                </div>
+                <button class="btn-compare" onclick="toggleCompare()" style="width: 100%; margin-top: 10px;">📊 비교 모드</button>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255, 99, 132, 0.8);"></div>
+                        <span>방향제</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(102, 126, 234, 0.6);"></div>
+                        <span>향기 입자</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <div class="compare-mode" id="compareMode">
+                    <strong>📊 비교 모드 활성화:</strong> 조건을 변경하고 시작 버튼을 누르면 이전 결과와 비교할 수 있습니다.
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="simulationCanvas" width="700" height="500"></canvas>
+                    <div class="status-bar">
+                        <div class="status-item">
+                            <div class="status-label">경과 시간</div>
+                            <div class="status-value" id="timeDisplay">0.0초</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">확산 입자 수</div>
+                            <div class="status-value" id="diffusedCount">0개</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">평균 확산 거리</div>
+                            <div class="status-value" id="avgDistance">0px</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">확산 속도</div>
+                            <div class="status-value" id="diffusionSpeed">0</div>
+                        </div>
+                    </div>
+
+                    <div class="heatmap-legend">
+                        <span style="font-size: 13px; font-weight: bold;">입자 농도:</span>
+                        <div class="heatmap-gradient"></div>
+                        <span style="font-size: 12px;">낮음 → 높음</span>
+                    </div>
+                </div>
+
+                <div class="graphs-container">
+                    <div class="graph-box">
+                        <h3>📈 확산 반경 vs 시간</h3>
+                        <canvas id="radiusGraph" width="400" height="250"></canvas>
+                    </div>
+                    <div class="graph-box">
+                        <h3>📊 입자 농도 vs 거리</h3>
+                        <canvas id="densityGraph" width="400" height="250"></canvas>
+                    </div>
+                </div>
+
+                <div class="feedback-panel" id="feedbackPanel" style="display: none;">
+                    <h3>💡 실험 결과 분석</h3>
+                    <p id="feedbackText"></p>
+                </div>
+
+                <div class="quiz-panel">
+                    <h3>🤔 생각해볼 문제</h3>
+                    <div class="quiz-question">
+                        <strong>Q1.</strong> 입자의 수가 많을수록 향이 더 빨리 퍼지는 이유는 무엇일까요?
+                    </div>
+                    <div class="quiz-question">
+                        <strong>Q2.</strong> 기온이 낮으면 확산 속도가 느려지는 이유를 입자의 운동으로 설명하시오.
+                    </div>
+                    <div class="quiz-question">
+                        <strong>Q3.</strong> 방향제를 중앙에 놓았을 때와 구석에 놓았을 때 확산 속도가 어떻게 다른지 관찰하고, 그 이유를 설명하시오.
+                    </div>
+                    <div class="quiz-question">
+                        <strong>Q4.</strong> 확산과 증발은 왜 입자의 운동으로 설명될 수 있나요?
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 캔버스 설정
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        const radiusCanvas = document.getElementById('radiusGraph');
+        const radiusCtx = radiusCanvas.getContext('2d');
+        const densityCanvas = document.getElementById('densityGraph');
+        const densityCtx = densityCanvas.getContext('2d');
+
+        // 시뮬레이션 변수
+        let particles = [];
+        let source = { x: 350, y: 250 };
+        let isRunning = false;
+        let animationId = null;
+        let startTime = 0;
+        let elapsedTime = 0;
+
+        // 데이터 수집
+        let radiusData = [];
+        let densityData = [];
+        let compareData = null;
+
+        // 설정값
+        let config = {
+            temperature: 20,
+            particleCount: 100,
+            position: 'center',
+            closure: 'open'
+        };
+
+        // 입자 클래스
+        class Particle {
+            constructor(x, y, temp) {
+                this.x = x;
+                this.y = y;
+                this.baseSpeed = (temp + 10) / 15; // 온도에 따른 기본 속도
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = this.baseSpeed * (0.5 + Math.random());
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.size = 3 + Math.random() * 2;
+                this.alpha = 0.6 + Math.random() * 0.4;
+                this.color = `rgba(102, 126, 234, ${this.alpha})`;
+                this.trail = [];
+                this.maxTrailLength = 10;
+            }
+
+            update() {
+                // 무작위 운동 (브라운 운동)
+                this.angle += (Math.random() - 0.5) * 0.3;
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+
+                // 위치 업데이트
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 벽 충돌 처리
+                if (config.closure !== 'open') {
+                    if (this.x <= 10 || this.x >= canvas.width - 10) {
+                        this.vx *= -0.8;
+                        this.x = Math.max(10, Math.min(canvas.width - 10, this.x));
+                    }
+                    if (this.y <= 10 || this.y >= canvas.height - 10) {
+                        this.vy *= -0.8;
+                        this.y = Math.max(10, Math.min(canvas.height - 10, this.y));
+                    }
+                }
+
+                // 개방 공간: 화면 밖으로 나가면 반대편에서 나타남
+                if (config.closure === 'open') {
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.y < 0) this.y = canvas.height;
+                    if (this.y > canvas.height) this.y = 0;
+                }
+            }
+
+            draw() {
+                // 입자 궤적 그리기
+                if (this.trail.length > 1) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = `rgba(102, 126, 234, 0.2)`;
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.stroke();
+                }
+
+                // 입자 그리기
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(102, 126, 234, 0.8)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // UI 업데이트
+        document.getElementById('temperature').addEventListener('input', function(e) {
+            config.temperature = parseInt(e.target.value);
+            let tempLabel = '낮음';
+            if (config.temperature === 20) tempLabel = '보통';
+            if (config.temperature === 30) tempLabel = '높음';
+            if (config.temperature === 40) tempLabel = '매우 높음';
+            document.getElementById('tempValue').textContent = `${config.temperature}°C (${tempLabel})`;
+        });
+
+        document.getElementById('particleCount').addEventListener('input', function(e) {
+            config.particleCount = parseInt(e.target.value);
+            let countLabel = '적음';
+            if (config.particleCount === 100) countLabel = '중간';
+            if (config.particleCount === 150) countLabel = '많음';
+            if (config.particleCount === 200) countLabel = '매우 많음';
+            document.getElementById('particleValue').textContent = `${config.particleCount}개 (${countLabel})`;
+        });
+
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                this.parentElement.querySelectorAll('.radio-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+
+                if (radio.name === 'position') {
+                    config.position = radio.value;
+                } else if (radio.name === 'closure') {
+                    config.closure = radio.value;
+                }
+            });
+        });
+
+        // 방향제 위치 설정
+        function setSourcePosition() {
+            switch(config.position) {
+                case 'center':
+                    source = { x: canvas.width / 2, y: canvas.height / 2 };
+                    break;
+                case 'corner':
+                    source = { x: 50, y: 50 };
+                    break;
+                case 'right':
+                    source = { x: canvas.width - 50, y: canvas.height / 2 };
+                    break;
+            }
+        }
+
+        // 시뮬레이션 시작
+        function startSimulation() {
+            if (isRunning) return;
+
+            // 비교 모드: 현재 데이터 저장
+            if (document.getElementById('compareMode').classList.contains('active')) {
+                compareData = {
+                    radiusData: [...radiusData],
+                    config: {...config}
+                };
+            }
+
+            resetSimulation();
+            isRunning = true;
+            startTime = Date.now();
+            setSourcePosition();
+
+            // 입자 생성
+            for (let i = 0; i < config.particleCount; i++) {
+                setTimeout(() => {
+                    particles.push(new Particle(source.x, source.y, config.temperature));
+                }, i * 50); // 순차적으로 생성
+            }
+
+            animate();
+        }
+
+        // 시뮬레이션 초기화
+        function resetSimulation() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            particles = [];
+            radiusData = [];
+            densityData = [];
+            elapsedTime = 0;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            
+            document.getElementById('timeDisplay').textContent = '0.0초';
+            document.getElementById('diffusedCount').textContent = '0개';
+            document.getElementById('avgDistance').textContent = '0px';
+            document.getElementById('diffusionSpeed').textContent = '0';
+            document.getElementById('feedbackPanel').style.display = 'none';
+        }
+
+        // 배경 그리기
+        function drawBackground() {
+            // 배경 그라디언트
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, '#f0f4ff');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 히트맵 그리기
+            drawHeatmap();
+
+            // 방향제 그리기
+            ctx.beginPath();
+            ctx.arc(source.x, source.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 99, 132, 0.8)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 99, 132, 1)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 방향제 라벨
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Malgun Gothic';
+            ctx.textAlign = 'center';
+            ctx.fillText('방향제', source.x, source.y + 35);
+
+            // 벽 그리기 (밀폐 상태)
+            if (config.closure === 'closed') {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 8;
+                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            } else if (config.closure === 'semi') {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.lineWidth = 5;
+                ctx.setLineDash([15, 15]);
+                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+                ctx.setLineDash([]);
+            }
+        }
+
+        // 히트맵 그리기
+        function drawHeatmap() {
+            const gridSize = 40;
+            const cols = Math.ceil(canvas.width / gridSize);
+            const rows = Math.ceil(canvas.height / gridSize);
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const x = i * gridSize;
+                    const y = j * gridSize;
+                    const centerX = x + gridSize / 2;
+                    const centerY = y + gridSize / 2;
+                    
+                    // 해당 영역의 입자 수 계산
+                    let count = 0;
+                    particles.forEach(p => {
+                        if (p.x >= x && p.x < x + gridSize && p.y >= y && p.y < y + gridSize) {
+                            count++;
+                        }
+                    });
+                    
+                    // 농도에 따른 색상
+                    const maxCount = 20;
+                    const intensity = Math.min(count / maxCount, 1);
+                    ctx.fillStyle = `rgba(102, 126, 234, ${intensity * 0.15})`;
+                    ctx.fillRect(x, y, gridSize, gridSize);
+                }
+            }
+        }
+
+        // 애니메이션
+        function animate() {
+            if (!isRunning) return;
+
+            elapsedTime = (Date.now() - startTime) / 1000;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+
+            // 입자 업데이트 및 그리기
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // 통계 계산
+            let totalDistance = 0;
+            let maxDistance = 0;
+            particles.forEach(p => {
+                const dist = Math.sqrt(Math.pow(p.x - source.x, 2) + Math.pow(p.y - source.y, 2));
+                totalDistance += dist;
+                maxDistance = Math.max(maxDistance, dist);
+            });
+
+            const avgDistance = particles.length > 0 ? totalDistance / particles.length : 0;
+            const diffusionSpeed = particles.length > 0 ? (avgDistance / elapsedTime).toFixed(1) : 0;
+
+            // UI 업데이트
+            document.getElementById('timeDisplay').textContent = elapsedTime.toFixed(1) + '초';
+            document.getElementById('diffusedCount').textContent = particles.length + '개';
+            document.getElementById('avgDistance').textContent = Math.round(avgDistance) + 'px';
+            document.getElementById('diffusionSpeed').textContent = diffusionSpeed;
+
+            // 데이터 수집 (0.5초마다)
+            if (elapsedTime % 0.5 < 0.05) {
+                radiusData.push({ time: elapsedTime, radius: avgDistance });
+                updateGraphs();
+            }
+
+            // 피드백 생성 (5초 후)
+            if (elapsedTime > 5 && document.getElementById('feedbackPanel').style.display === 'none') {
+                generateFeedback();
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 그래프 업데이트
+        function updateGraphs() {
+            // 확산 반경 그래프
+            radiusCtx.clearRect(0, 0, radiusCanvas.width, radiusCanvas.height);
+            
+            // 그리드
+            radiusCtx.strokeStyle = '#e0e0e0';
+            radiusCtx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const y = radiusCanvas.height - (i * radiusCanvas.height / 4);
+                radiusCtx.beginPath();
+                radiusCtx.moveTo(0, y);
+                radiusCtx.lineTo(radiusCanvas.width, y);
+                radiusCtx.stroke();
+            }
+
+            // 축 라벨
+            radiusCtx.fillStyle = '#666';
+            radiusCtx.font = '10px Malgun Gothic';
+            radiusCtx.textAlign = 'left';
+            radiusCtx.fillText('시간(초)', 10, 15);
+            radiusCtx.save();
+            radiusCtx.translate(15, radiusCanvas.height / 2);
+            radiusCtx.rotate(-Math.PI / 2);
+            radiusCtx.fillText('확산 반경(px)', 0, 0);
+            radiusCtx.restore();
+
+            if (radiusData.length > 1) {
+                const maxTime = Math.max(...radiusData.map(d => d.time));
+                const maxRadius = Math.max(...radiusData.map(d => d.radius));
+
+                // 현재 데이터 그리기
+                radiusCtx.beginPath();
+                radiusCtx.strokeStyle = '#667eea';
+                radiusCtx.lineWidth = 3;
+                radiusData.forEach((d, i) => {
+                    const x = (d.time / maxTime) * radiusCanvas.width;
+                    const y = radiusCanvas.height - (d.radius / maxRadius) * radiusCanvas.height;
+                    if (i === 0) {
+                        radiusCtx.moveTo(x, y);
+                    } else {
+                        radiusCtx.lineTo(x, y);
+                    }
+                });
+                radiusCtx.stroke();
+
+                // 비교 데이터 그리기
+                if (compareData && compareData.radiusData.length > 1) {
+                    radiusCtx.beginPath();
+                    radiusCtx.strokeStyle = '#ff6384';
+                    radiusCtx.lineWidth = 2;
+                    radiusCtx.setLineDash([5, 5]);
+                    compareData.radiusData.forEach((d, i) => {
+                        const x = (d.time / maxTime) * radiusCanvas.width;
+                        const y = radiusCanvas.height - (d.radius / maxRadius) * radiusCanvas.height;
+                        if (i === 0) {
+                            radiusCtx.moveTo(x, y);
+                        } else {
+                            radiusCtx.lineTo(x, y);
+                        }
+                    });
+                    radiusCtx.stroke();
+                    radiusCtx.setLineDash([]);
+                }
+            }
+
+            // 입자 농도 그래프
+            densityCtx.clearRect(0, 0, densityCanvas.width, densityCanvas.height);
+            
+            // 그리드
+            densityCtx.strokeStyle = '#e0e0e0';
+            densityCtx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const y = densityCanvas.height - (i * densityCanvas.height / 4);
+                densityCtx.beginPath();
+                densityCtx.moveTo(0, y);
+                densityCtx.lineTo(densityCanvas.width, y);
+                densityCtx.stroke();
+            }
+
+            // 축 라벨
+            densityCtx.fillStyle = '#666';
+            densityCtx.font = '10px Malgun Gothic';
+            densityCtx.textAlign = 'left';
+            densityCtx.fillText('거리(px)', 10, 15);
+            densityCtx.save();
+            densityCtx.translate(15, densityCanvas.height / 2);
+            densityCtx.rotate(-Math.PI / 2);
+            densityCtx.fillText('입자 농도', 0, 0);
+            densityCtx.restore();
+
+            // 거리별 입자 수 계산
+            const bins = 10;
+            const maxDist = Math.max(canvas.width, canvas.height) / 2;
+            const binSize = maxDist / bins;
+            const densityCounts = new Array(bins).fill(0);
+
+            particles.forEach(p => {
+                const dist = Math.sqrt(Math.pow(p.x - source.x, 2) + Math.pow(p.y - source.y, 2));
+                const binIndex = Math.min(Math.floor(dist / binSize), bins - 1);
+                densityCounts[binIndex]++;
+            });
+
+            // 막대 그래프 그리기
+            const maxCount = Math.max(...densityCounts, 1);
+            const barWidth = densityCanvas.width / bins;
+            
+            densityCounts.forEach((count, i) => {
+                const height = (count / maxCount) * densityCanvas.height * 0.8;
+                const x = i * barWidth;
+                const y = densityCanvas.height - height;
+                
+                const gradient = densityCtx.createLinearGradient(0, y, 0, densityCanvas.height);
+                gradient.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
+                gradient.addColorStop(1, 'rgba(102, 126, 234, 0.4)');
+                
+                densityCtx.fillStyle = gradient;
+                densityCtx.fillRect(x + 2, y, barWidth - 4, height);
+                
+                densityCtx.strokeStyle = '#667eea';
+                densityCtx.lineWidth = 1;
+                densityCtx.strokeRect(x + 2, y, barWidth - 4, height);
+            });
+        }
+
+        // 피드백 생성
+        function generateFeedback() {
+            const feedbackPanel = document.getElementById('feedbackPanel');
+            const feedbackText = document.getElementById('feedbackText');
+            
+            let feedback = `<strong>실험 조건:</strong> 온도 ${config.temperature}°C, 입자 ${config.particleCount}개, 위치: ${getPositionText()}<br><br>`;
+            
+            feedback += `<strong>관찰 결과:</strong><br>`;
+            
+            if (config.temperature >= 30) {
+                feedback += `• 높은 온도에서 입자의 평균 운동 속도가 증가하여 확산이 빠르게 진행되었습니다. 이는 온도가 높을수록 입자의 운동 에너지가 커지기 때문입니다.<br>`;
+            } else if (config.temperature <= 10) {
+                feedback += `• 낮은 온도에서 입자의 운동 속도가 느려 확산이 천천히 진행되었습니다. 온도가 낮으면 입자의 운동 에너지가 작아집니다.<br>`;
+            }
+            
+            if (config.particleCount >= 150) {
+                feedback += `• 입자 수가 많아 전체적인 확산 범위가 넓고, 공간 전체에 빠르게 퍼졌습니다.<br>`;
+            }
+            
+            if (config.position === 'center') {
+                feedback += `• 방향제를 중앙에 배치하여 모든 방향으로 균등하게 확산되었습니다.<br>`;
+            } else {
+                feedback += `• 방향제를 한쪽에 배치하여 확산이 비대칭적으로 진행되었으며, 먼 곳까지 도달하는데 더 많은 시간이 필요했습니다.<br>`;
+            }
+
+            feedback += `<br><strong>💡 핵심 개념:</strong> 확산은 입자들의 자발적이고 무작위적인 운동(브라운 운동)의 결과입니다. 입자들은 끊임없이 움직이며, 이 운동으로 인해 농도가 높은 곳에서 낮은 곳으로 물질이 이동합니다.`;
+            
+            feedbackText.innerHTML = feedback;
+            feedbackPanel.style.display = 'block';
+        }
+
+        function getPositionText() {
+            switch(config.position) {
+                case 'center': return '중앙';
+                case 'corner': return '왼쪽 구석';
+                case 'right': return '오른쪽 모서리';
+                default: return '중앙';
+            }
+        }
+
+        // 비교 모드 토글
+        function toggleCompare() {
+            const compareMode = document.getElementById('compareMode');
+            compareMode.classList.toggle('active');
+        }
+
+        // 초기화
+        drawBackground();
+    </script>
+</body>
+</html>
