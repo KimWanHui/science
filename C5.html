@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기체의 압력 시뮬레이션 - 중학교 1학년 과학</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .achievement {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .simulation-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .bottle-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(180deg, rgba(135,206,250,0.3) 0%, rgba(135,206,250,0.1) 100%);
+            border: 4px solid #4a90e2;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(74,144,226,0.3);
+        }
+
+        .particle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset -2px -2px 4px rgba(0,0,0,0.2);
+            transition: all 0.05s linear;
+        }
+
+        .collision-effect {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            animation: collisionPulse 0.3s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes collisionPulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: #5e72e4;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group h3::before {
+            content: "🔧";
+            font-size: 1.3em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2dce89 0%, #2dcecc 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #fb6340 0%, #fbb140 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f5365c 0%, #f56036 100%);
+            color: white;
+        }
+
+        .slider-control {
+            margin: 15px 0;
+        }
+
+        .slider-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .slider-control input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #5e72e4;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .slider-value {
+            display: inline-block;
+            background: #5e72e4;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .stats-area {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .chart-container h3 {
+            color: #5e72e4;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 250px !important;
+        }
+
+        .quiz-section {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 10px;
+        }
+
+        .quiz-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .quiz-question {
+            margin: 15px 0;
+        }
+
+        .quiz-question p {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            background: #f8f9fa;
+            border-color: #5e72e4;
+        }
+
+        .quiz-option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .quiz-option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .feedback-panel {
+            background: #e7f3ff;
+            border-left: 5px solid #2196F3;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 10px;
+        }
+
+        .feedback-panel h3 {
+            color: #1976D2;
+            margin-bottom: 15px;
+        }
+
+        .explanation {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 30px;
+        }
+
+        .info-box h4 {
+            margin-bottom: 10px;
+            color: #0c5460;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pressure-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .pressure-bar {
+            width: 200px;
+            height: 30px;
+            background: #eee;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .pressure-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2dce89, #fb6340, #f5365c);
+            transition: width 0.3s;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 기체의 압력 시뮬레이션</h1>
+            <p>페트병 속 콩 충돌 실험으로 배우는 기체 입자 운동</p>
+            <div class="achievement">
+                <strong>성취기준:</strong> 중1 과학 4-1-2 | 
+                기체가 압력을 가진다는 것을 다양한 현상이나 실험을 통해 확인하고, 
+                그 까닭을 입자의 운동으로 설명한다.
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 실험 안내</h4>
+            <p>페트병 안의 콩이 벽에 부딪히는 것처럼, 실제 기체 입자들도 끊임없이 움직이며 용기 벽에 충돌합니다. 
+            이러한 충돌이 바로 <strong>기체의 압력</strong>을 만들어냅니다. 
+            콩의 개수, 흔들기 강도를 조절하면서 압력의 변화를 관찰해보세요!</p>
+        </div>
+
+        <div class="main-content">
+            <div class="simulation-area">
+                <h2 style="color: #5e72e4; margin-bottom: 20px;">🧴 페트병 시뮬레이션</h2>
+                <div class="bottle-container" id="bottleContainer">
+                    <div class="pressure-indicator">
+                        <strong>압력 측정</strong>
+                        <div class="pressure-bar">
+                            <div class="pressure-fill" id="pressureFill"></div>
+                        </div>
+                        <p id="pressureValue" style="margin-top: 5px; font-weight: 600; color: #5e72e4;">0 Pa</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="control-group">
+                    <h3>실험 변수 조절</h3>
+                    
+                    <div class="slider-control">
+                        <label>콩 개수 (입자 수): <span class="slider-value" id="particleCountValue">10개</span></label>
+                        <input type="range" id="particleCount" min="5" max="20" value="10" step="1">
+                    </div>
+
+                    <div class="slider-control">
+                        <label>입자 속도: <span class="slider-value" id="speedValue">보통</span></label>
+                        <input type="range" id="particleSpeed" min="1" max="5" value="3" step="1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>페트병 흔들기</h3>
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="shake('weak')">약하게 🌱</button>
+                        <button class="btn btn-warning" onclick="shake('medium')">중간 ⚡</button>
+                        <button class="btn btn-danger" onclick="shake('strong')">강하게 🔥</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>실험 제어</h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startSimulation()">▶ 시작</button>
+                        <button class="btn btn-primary" onclick="pauseSimulation()">⏸ 일시정지</button>
+                        <button class="btn btn-primary" onclick="resetSimulation()">🔄 초기화</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-area">
+                <div class="stat-card">
+                    <h4>총 충돌 횟수</h4>
+                    <div class="stat-value" id="collisionCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>현재 입자 수</h4>
+                    <div class="stat-value" id="currentParticles">10</div>
+                </div>
+                <div class="stat-card">
+                    <h4>평균 속도</h4>
+                    <div class="stat-value" id="avgSpeed">보통</div>
+                </div>
+                <div class="stat-card">
+                    <h4>추정 압력</h4>
+                    <div class="stat-value" id="estimatedPressure">0 Pa</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container" style="margin: 0 30px 30px 30px;">
+            <h3>📊 실시간 충돌 횟수 그래프</h3>
+            <canvas id="collisionChart"></canvas>
+        </div>
+
+        <div class="feedback-panel">
+            <h3>🤔 생각해보기</h3>
+            <div class="explanation">
+                <p><strong>Q1: 왜 손바닥에 힘이 느껴질까요?</strong></p>
+                <p>→ 페트병을 흔들면 콩들이 벽에 부딪히면서 힘을 가합니다. 
+                실제 기체에서도 수많은 입자들이 용기 벽에 끊임없이 충돌하여 압력을 만들어냅니다.</p>
+            </div>
+            <div class="explanation">
+                <p><strong>Q2: 콩의 개수를 늘리면 어떤 변화가 생길까요?</strong></p>
+                <p>→ 콩이 많아지면 충돌 횟수가 증가하고, 압력도 커집니다. 
+                기체에서도 입자의 수가 많을수록 압력이 높아집니다. (P ∝ n)</p>
+            </div>
+            <div class="explanation">
+                <p><strong>Q3: 흔들기 강도를 세게 하면 어떻게 될까요?</strong></p>
+                <p>→ 콩의 운동 속도가 빨라져 충돌할 때 더 큰 힘을 전달합니다. 
+                기체의 온도가 높아지면 입자의 운동 속도가 빨라져 압력이 증가하는 원리와 같습니다.</p>
+            </div>
+        </div>
+
+        <div class="quiz-section">
+            <h3>✅ 이해도 확인 퀴즈</h3>
+            
+            <div class="quiz-question">
+                <p>1. 기체의 압력이 발생하는 주된 원인은?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ① 기체 입자들이 서로 끌어당기기 때문에
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">
+                        ② 기체 입자들이 용기 벽에 충돌하기 때문에
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ③ 기체 입자들이 정지해 있기 때문에
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <p>2. 콩의 개수를 2배로 늘리면 충돌 횟수는 어떻게 될까요?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ① 변화 없음
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">
+                        ② 약 2배로 증가
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ③ 약 4배로 증가
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-question">
+                <p>3. 다음 중 기체의 압력을 높이는 방법이 아닌 것은?</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ① 기체의 양을 늘린다
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">
+                        ② 온도를 높인다
+                    </div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">
+                        ③ 용기의 부피를 크게 한다
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h4>🌍 실생활 속 기체 압력</h4>
+            <p><strong>• 풍선:</strong> 내부 기체 입자의 충돌로 풍선이 부풀어 오릅니다.</p>
+            <p><strong>• 타이어:</strong> 공기압이 높으면 많은 입자가 타이어 벽을 밀어내 단단해집니다.</p>
+            <p><strong>• 에어매트:</strong> 공기를 많이 넣을수록 압력이 높아져 딱딱해집니다.</p>
+            <p><strong>• 압력밥솥:</strong> 높은 압력으로 끓는점이 올라가 음식이 빨리 익습니다.</p>
+        </div>
+    </div>
+
+    <script>
+        // 시뮬레이션 변수
+        let particles = [];
+        let isRunning = false;
+        let animationId = null;
+        let collisionCount = 0;
+        let collisionHistory = [];
+        let timeStamp = 0;
+        const maxHistoryPoints = 30;
+
+        // 페트병 컨테이너
+        const container = document.getElementById('bottleContainer');
+        const containerRect = container.getBoundingClientRect();
+
+        // 차트 설정
+        const ctx = document.getElementById('collisionChart').getContext('2d');
+        let chart = null;
+
+        // 입자 클래스
+        class Particle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = 10;
+                this.element = document.createElement('div');
+                this.element.className = 'particle';
+                container.appendChild(this.element);
+                this.updatePosition();
+            }
+
+            updatePosition() {
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 벽 충돌 검사
+                const containerWidth = container.offsetWidth;
+                const containerHeight = container.offsetHeight;
+
+                if (this.x <= this.radius || this.x >= containerWidth - this.radius) {
+                    this.vx = -this.vx;
+                    this.x = Math.max(this.radius, Math.min(this.x, containerWidth - this.radius));
+                    this.collision(this.x, this.y);
+                }
+
+                if (this.y <= this.radius || this.y >= containerHeight - this.radius) {
+                    this.vy = -this.vy;
+                    this.y = Math.max(this.radius, Math.min(this.y, containerHeight - this.radius));
+                    this.collision(this.x, this.y);
+                }
+
+                this.updatePosition();
+            }
+
+            collision(x, y) {
+                collisionCount++;
+                updateStats();
+                
+                // 충돌 효과 표시
+                const effect = document.createElement('div');
+                effect.className = 'collision-effect';
+                effect.style.left = (x - 15) + 'px';
+                effect.style.top = (y - 15) + 'px';
+                container.appendChild(effect);
+                
+                // 효과음 (선택적)
+                playCollisionSound();
+                
+                setTimeout(() => {
+                    effect.remove();
+                }, 300);
+            }
+
+            remove() {
+                this.element.remove();
+            }
+        }
+
+        // 시뮬레이션 초기화
+        function initSimulation() {
+            const particleCount = parseInt(document.getElementById('particleCount').value);
+            const speedMultiplier = parseInt(document.getElementById('particleSpeed').value);
+            
+            // 기존 입자 제거
+            particles.forEach(p => p.remove());
+            particles = [];
+
+            // 새 입자 생성
+            for (let i = 0; i < particleCount; i++) {
+                const x = Math.random() * (container.offsetWidth - 40) + 20;
+                const y = Math.random() * (container.offsetHeight - 40) + 20;
+                const vx = (Math.random() - 0.5) * speedMultiplier * 2;
+                const vy = (Math.random() - 0.5) * speedMultiplier * 2;
+                particles.push(new Particle(x, y, vx, vy));
+            }
+
+            updateStats();
+        }
+
+        // 시뮬레이션 시작
+        function startSimulation() {
+            if (!isRunning) {
+                isRunning = true;
+                if (particles.length === 0) {
+                    initSimulation();
+                }
+                animate();
+            }
+        }
+
+        // 시뮬레이션 일시정지
+        function pauseSimulation() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+
+        // 시뮬레이션 초기화
+        function resetSimulation() {
+            pauseSimulation();
+            collisionCount = 0;
+            collisionHistory = [];
+            timeStamp = 0;
+            particles.forEach(p => p.remove());
+            particles = [];
+            updateStats();
+            updateChart();
+        }
+
+        // 애니메이션 루프
+        function animate() {
+            if (!isRunning) return;
+
+            particles.forEach(particle => {
+                particle.move();
+            });
+
+            // 입자 간 충돌 검사 (간단한 버전)
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < particles[i].radius + particles[j].radius) {
+                        // 간단한 탄성 충돌
+                        const tempVx = particles[i].vx;
+                        const tempVy = particles[i].vy;
+                        particles[i].vx = particles[j].vx;
+                        particles[i].vy = particles[j].vy;
+                        particles[j].vx = tempVx;
+                        particles[j].vy = tempVy;
+                    }
+                }
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 페트병 흔들기
+        function shake(intensity) {
+            let multiplier;
+            switch(intensity) {
+                case 'weak':
+                    multiplier = 1.5;
+                    break;
+                case 'medium':
+                    multiplier = 2.5;
+                    break;
+                case 'strong':
+                    multiplier = 4;
+                    break;
+            }
+
+            particles.forEach(particle => {
+                particle.vx += (Math.random() - 0.5) * multiplier;
+                particle.vy += (Math.random() - 0.5) * multiplier;
+            });
+
+            if (!isRunning) {
+                startSimulation();
+            }
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            document.getElementById('collisionCount').textContent = collisionCount;
+            document.getElementById('currentParticles').textContent = particles.length;
+            
+            const speedValue = document.getElementById('particleSpeed').value;
+            const speedText = ['매우 느림', '느림', '보통', '빠름', '매우 빠름'][speedValue - 1];
+            document.getElementById('avgSpeed').textContent = speedText;
+
+            // 압력 추정 (충돌 횟수와 입자 수 기반)
+            const pressure = Math.round(collisionCount * particles.length * 0.5);
+            document.getElementById('estimatedPressure').textContent = pressure + ' Pa';
+            
+            // 압력 바 업데이트
+            const pressurePercent = Math.min((pressure / 1000) * 100, 100);
+            document.getElementById('pressureFill').style.width = pressurePercent + '%';
+            document.getElementById('pressureValue').textContent = pressure + ' Pa';
+
+            // 차트 데이터 업데이트
+            if (isRunning) {
+                timeStamp++;
+                collisionHistory.push({time: timeStamp, count: collisionCount});
+                if (collisionHistory.length > maxHistoryPoints) {
+                    collisionHistory.shift();
+                }
+                updateChart();
+            }
+        }
+
+        // 차트 업데이트
+        function updateChart() {
+            if (chart) {
+                chart.destroy();
+            }
+
+            const labels = collisionHistory.map(d => d.time + 's');
+            const data = collisionHistory.map(d => d.count);
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '누적 충돌 횟수',
+                        data: data,
+                        borderColor: '#5e72e4',
+                        backgroundColor: 'rgba(94, 114, 228, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '충돌 횟수'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '시간'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 충돌음 재생 (Web Audio API)
+        function playCollisionSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // 퀴즈 정답 확인
+        function checkAnswer(element, isCorrect) {
+            const options = element.parentElement.children;
+            for (let option of options) {
+                option.style.pointerEvents = 'none';
+            }
+
+            if (isCorrect) {
+                element.classList.add('correct');
+                alert('정답입니다! 🎉');
+            } else {
+                element.classList.add('incorrect');
+                alert('다시 생각해보세요. 기체 입자의 운동과 충돌을 떠올려보세요!');
+            }
+        }
+
+        // 슬라이더 이벤트
+        document.getElementById('particleCount').addEventListener('input', function(e) {
+            document.getElementById('particleCountValue').textContent = e.target.value + '개';
+            if (!isRunning) {
+                initSimulation();
+            }
+        });
+
+        document.getElementById('particleSpeed').addEventListener('input', function(e) {
+            const speedText = ['매우 느림', '느림', '보통', '빠름', '매우 빠름'][e.target.value - 1];
+            document.getElementById('speedValue').textContent = speedText;
+            
+            // 기존 입자 속도 조정
+            const speedMultiplier = parseInt(e.target.value);
+            particles.forEach(particle => {
+                const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                const angle = Math.atan2(particle.vy, particle.vx);
+                particle.vx = Math.cos(angle) * speedMultiplier;
+                particle.vy = Math.sin(angle) * speedMultiplier;
+            });
+        });
+
+        // Chart.js 라이브러리 로드
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        document.head.appendChild(script);
+
+        // 초기화
+        window.onload = function() {
+            initSimulation();
+        };
+    </script>
+</body>
+</html>
