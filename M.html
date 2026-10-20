@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>중화 반응 가상실험 · 개선판</title>
+<style>
+:root{--bg:#f3f8fb;--card:#fff;--ink:#1c2a35;--mute:#5b6e7c;--line:#d3dfe8;--acc:#1877ad;--accbg:#e6f3fa;--la:#dde2e6;--lb:#dde2e6;--glass:#5b6e7c;--ppt:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f171d;--card:#18232b;--ink:#e6eef3;--mute:#9bb0bf;--line:#2c3c47;--acc:#4db3e6;--accbg:#173545;--la:#55626b;--lb:#55626b;--glass:#9bb0bf;--ppt:#f1f1f1}}
+:root[data-theme="dark"]{--bg:#0f171d;--card:#18232b;--ink:#e6eef3;--mute:#9bb0bf;--line:#2c3c47;--acc:#4db3e6;--accbg:#173545;--la:#55626b;--lb:#55626b;--glass:#9bb0bf;--ppt:#f1f1f1}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding:16px}
+h1{font-size:1.25rem;margin:0 0 10px}
+.steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.steps span{flex:1;min-width:70px;text-align:center;font-size:.82rem;padding:6px 4px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
+.steps .on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.steps .done{background:var(--accbg);color:var(--acc)}
+.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h2{font-size:1rem;margin:0 0 8px}
+svg{width:100%;height:auto;display:block}
+.glass{fill:none;stroke:var(--glass);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.liq{transform-box:fill-box;transform-origin:50% 100%;transition:transform 1.6s ease,fill 1.5s ease}
+#gB{transition:transform 1.2s ease}
+text{fill:var(--ink);font-size:13px}
+.sub{fill:var(--mute);font-size:12px}
+.ctl{margin-bottom:12px}
+.ctl label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px}
+.row{display:flex;gap:8px;align-items:center}
+input[type=range]{flex:1;accent-color:var(--acc)}
+input[type=number]{width:84px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:.95rem}
+.fixed{background:var(--accbg);border-radius:10px;padding:10px;margin-bottom:12px;font-size:.9rem}
+button{font:inherit;border-radius:10px;border:1px solid var(--acc);padding:10px 14px;cursor:pointer;background:var(--acc);color:#fff;font-weight:600}
+button.ghost{background:transparent;color:var(--acc)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button.main{flex:1;min-width:140px}
+.chips{display:flex;gap:10px;justify-content:center;margin-top:6px;min-height:34px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:99px;font-weight:600;border:2px solid var(--acc);font-size:.95rem}
+.chip.on{background:var(--acc);color:#fff}.chip.off{color:var(--mute);border-color:var(--line)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:420px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center}
+th{color:var(--mute);font-weight:600}
+.note{font-size:.78rem;color:var(--mute);margin-top:12px}
+.tick{fill:none;stroke:var(--glass);stroke-width:1.5;opacity:.55}.last{background:var(--accbg)}body.q #gB{transition-duration:.2s}body.q circle{transition-duration:.2s!important}
+#teacher{display:none;margin-top:12px;font-size:.85rem}
+.observation{font-size:.86rem;line-height:1.55;text-align:center;color:var(--mute);margin:10px 0 0;min-height:2.7em}
+.quick{display:block;font-size:.85rem;color:var(--mute);margin-bottom:10px}
+.goal{background:var(--accbg);border-left:3px solid var(--acc);border-radius:7px;padding:10px;margin:0 0 12px;font-size:.86rem}
+.muted{color:var(--mute);font-size:.86rem}.compare{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.compare-item{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);font-size:.9rem}
+.compare-item p{margin:6px 0}.comp-result{font-weight:700}.tiny{font-size:.75rem;color:var(--mute)}
+.pick{width:17px;height:17px;accent-color:var(--acc);cursor:pointer}.delete{padding:4px 9px;font-size:.75rem;background:transparent;color:var(--acc)}
+.chips .chip{border-width:1px}.chip.on{background:var(--accbg);color:var(--acc)}
+@media(max-width:520px){.compare-grid{grid-template-columns:1fr}.wrap{padding:10px}.card{padding:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧪 중화 반응 가상실험</h1>
+<div class="btns" style="margin-bottom:10px"><button id="s0">1단계 · 같은 질량 백분율 농도</button><button id="s1" class="ghost">2단계 · 질량 백분율 농도 변경</button><button id="s3" class="ghost">3단계 · 몰농도로 설명</button></div>
+<p class="fixed" id="goal" aria-live="polite"></p>
+<div class="steps" id="steps"><span>① 조건 설정</span><span>② 지시약</span><span>③ 혼합</span><span>④ 기록</span></div>
+<div id="lab"><div class="grid">
+ <div class="card">
+  <svg id="stage" viewBox="0 0 600 310" role="img" aria-label="비커 실험 장면">
+   <defs><clipPath id="cl"><rect x="3" y="0" width="124" height="157" rx="8"/></clipPath></defs>
+   <rect x="20" y="252" width="560" height="6" rx="3" fill="var(--line)"/>
+   <g transform="translate(70,90)">
+    <g clip-path="url(#cl)">
+     <rect id="liqA" class="liq" x="3" y="0" width="124" height="157" fill="var(--la)" fill-opacity=".6" style="transform:scaleY(.62)"/>
+     <rect id="sed" class="liq" x="3" y="117" width="124" height="40" fill="var(--ppt)" style="transform:scaleY(0)"/>
+     <g id="pts"></g>
+    </g>
+    <path class="glass" d="M0,0V150Q0,160 10,160H120Q130,160 130,150V0"/>
+    <path class="tick" d="M130,30h-14M130,60h-9M130,90h-14M130,120h-9"/>
+    <text x="65" y="184" text-anchor="middle">NaOH 수용액 🔒</text>
+    <text id="lblA" x="65" y="202" text-anchor="middle" class="sub">10 % · 100 mL</text>
+   </g>
+   <rect id="stream" x="168" y="30" width="5" height="115" rx="2" fill="var(--lb)" style="opacity:0;transition:opacity .4s"/>
+   <rect x="127" y="2" width="16" height="22" rx="4" fill="var(--glass)" fill-opacity=".45"/><text x="150" y="18" class="sub">BTB 용액</text>
+   <circle id="dr" cx="135" cy="34" r="5" fill="#3fae6a" style="opacity:0"/>
+   <g transform="translate(400,90)">
+    <g id="gB" style="transform-origin:0 0">
+     <g clip-path="url(#cl)"><rect id="liqB" class="liq" x="3" y="0" width="124" height="157" fill="var(--lb)" fill-opacity=".6" style="transform:scaleY(.4)"/></g>
+     <path class="glass" d="M0,0V150Q0,160 10,160H120Q130,160 130,150V0"/>
+    <path class="tick" d="M130,30h-14M130,60h-9M130,90h-14M130,120h-9"/>
+    </g>
+    <text x="65" y="184" text-anchor="middle">HNO₃ 수용액</text>
+    <text id="lblB" x="65" y="202" text-anchor="middle" class="sub">10 % · 100 mL</text>
+   </g>
+  </svg>
+  <div class="chips" id="chips"></div>
+  <p id="observation" class="muted" aria-live="polite"></p>
+ </div>
+ <div class="card">
+  <div class="fixed" id="fa">🔒 <b>비커 A</b> · NaOH 수용액<br>질량 백분율 농도 10 % · 부피 100 mL (변경 불가)</div>
+  <h2>비커 B · HNO₃ 수용액</h2>
+  <div class="fixed" id="fb">🔒 질량 백분율 농도 10 % · 부피 100 mL (변경 불가)</div>
+  <div class="fixed" id="def" style="display:none">몰농도(M) = 용질의 양(mol) ÷ 용액의 부피(L)<br>예) 0.50 M 용액 1 L에는 용질 0.50 mol이 들어 있어요.</div>
+  <div class="ctl" id="cctl" style="display:none"><label for="cn"><span id="clab">HNO₃ 몰농도 (mol/L)</span></label>
+   <div class="row"><input type="range" id="cs" min="1" max="30" step="0.1" value="10" aria-label="농도 슬라이더"><input type="number" id="cn" min="1" max="30" step="0.1" value="10"></div></div>
+  <div class="ctl" id="vctl"><label for="vn"><span>용액 부피 (mL)</span></label>
+   <div class="row"><input type="range" id="vs" min="0" max="300" step="1" value="100" aria-label="부피 슬라이더"><input type="number" id="vn" min="0" max="300" step="1" value="100"></div></div>
+  <label style="display:block;font-size:.85rem;color:var(--mute);margin-bottom:8px"><input type="checkbox" id="quick"> 빠르게 진행 (애니메이션 단축)</label>
+  <div class="btns"><button class="main" id="main">용액 혼합하기</button><button class="ghost" id="again" hidden>새 실험</button></div>
+ </div>
+</div>
+<div class="card" style="margin-top:14px">
+ <h2>실험 기록</h2>
+ <div class="tw"><table><thead><tr><th>비교</th><th>실험 번호</th><th id="hc">HNO₃ 농도(%)</th><th>HNO₃ 부피(mL)</th><th>BTB 용액 색</th><th>삭제</th></tr></thead><tbody id="rec"></tbody></table></div>
+ <div class="btns" style="margin-top:10px"><button class="ghost" id="csv">CSV 다운로드</button><button class="ghost" id="clr">기록 초기화</button></div>
+  <section class="compare" aria-label="실험 결과 비교"><h2>실험 결과 비교</h2><p class="muted">실험 기록에서 비교할 결과를 최대 2개 선택하세요.</p><div id="compareContent" class="compare-grid"></div></section>
+</div>
+</div>
+<p class="note">· 이 가상실험은 강산(HNO₃)과 강염기(NaOH)가 1:1로 반응한다고 가정합니다. BTB 색은 계산된 최종 pH에 따라 노란색(pH 6.0 미만), 초록색(pH 6.0~7.6), 파란색(pH 7.6 초과)으로 단순화합니다.<br>· 혼합 부피는 더해진다고 가정하고, 혼합열·활동도·지시약 자체의 영향은 고려하지 않습니다.<br>· 질량 백분율 농도 단계의 밀도(10% NaOH: 1.109 g/mL, HNO₃: 1.05 g/mL)는 계산용 고정 가정값입니다. 특히 질산 농도를 바꾸더라도 밀도는 일정하게 두므로 정밀한 실제 실험 결과와 다를 수 있습니다.<br>· 농축 용액은 위험합니다. 수업에서는 실제 혼합 대신 가상실험으로 탐구하세요.</p>
+<div id="teacher" class="card"><b>교사용 · 계산 검증</b> <button class="ghost" id="runT">자동 테스트 실행</button><ul id="tout"></ul><div id="teacherDetail"></div></div>
+</div>
+<script>
+'use strict';
+/* 모든 계산은 몰수/부피를 SI 계열 단위로 통일하여 수행합니다. */
+const CONFIG = Object.freeze({
+  naoh: {pct:10, vol:100, rho:1.109, molarMass:40.00},
+  hno3: {rho:1.05, molarMass:63.01},
+  stage3BaseM:0.50, pKw:14, tolerance:1e-12
+});
+const $ = selector => document.querySelector(selector);
+const Q = () => document.body.classList.contains('q');
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms*(Q()?.15:1)));
+const fixed = (n,d=2) => Number(n).toFixed(d);
+const Model = {
+  massToMol(pct,vol,rho,molarMass){return (pct/100)*vol*rho/molarMass;},
+  run(stage,pct,vol){
+    const baseMol = stage===3 ? CONFIG.stage3BaseM*.100 : this.massToMol(10,100,CONFIG.naoh.rho,40);
+    const acidMol = stage===3 ? pct*vol/1000 : this.massToMol(pct,vol,CONFIG.hno3.rho,CONFIG.hno3.molarMass);
+    const totalL = (100+vol)/1000;
+    const excess = (acidMol-baseMol)/totalL;
+    /* 강산/강염기의 물 자동이온화를 포함한 양의 해, 실온 25 °C 가정. */
+    const kw=1e-14;
+    const h = excess>=0 ? (excess+Math.sqrt(excess*excess+4*kw))/2 : (2*kw)/(Math.sqrt(excess*excess+4*kw)-excess);
+    const pH = -Math.log10(Math.max(h,1e-14));
+    const color = pH<6?'노란색':pH>7.6?'파란색':'초록색';
+    return {baseMol,acidMol,totalL,pH,color,excess,neutral:Math.abs(acidMol-baseMol)<CONFIG.tolerance};
+  }
+};
+const BTB={노란색:'#e8c93a',파란색:'#2f6fd6',초록색:'#3fae6a'};
+const S={pct:10,vol:100};
+let STG=0,state='idle',busy=false,last=null,records=[],selected=[];
+try {
+  const raw=JSON.parse(localStorage.getItem('neutralLabV2')||'[]');
+  records=Array.isArray(raw)?raw.filter(r=>[0,1,3].includes(r.g)&&Number.isFinite(r.c)&&Number.isFinite(r.v)):[];
+} catch(e){records=[];}
+const stageRecords=()=>records.filter(r=>r.g===STG);
+const lv=(el,v,d=1.6)=>{el.style.transitionDuration=(Q()?d*.15:d)+'s';el.style.transform='scaleY('+v+')';};
+function drawB(){
+  lv($('#liqB'),S.vol>0?.10+.58*Math.sqrt(S.vol/300):0,.3);
+  $('#lblB').textContent= `${S.pct}${STG===3?' M':' %'} · ${S.vol} mL`;
+}
+function setObservation(message){$('#observation').textContent=message;}
+function change(k,v){
+  if(k==='pct'&&STG===1)return;
+  S[k]=Number(v);
+  if(state==='done')resetExp();
+  drawB();
+}
+[['c','pct'],['v','vol']].forEach(([k,key])=>{
+  const slider=$('#'+k+'s'),number=$('#'+k+'n');
+  slider.addEventListener('input',()=>{number.value=slider.value;change(key,slider.value)});
+  number.addEventListener('input',()=>{
+    const val=Number(number.value);
+    if(number.value!==''&&Number.isFinite(val)&&val>=Number(number.min)&&val<=Number(number.max)){
+      slider.value=val;change(key,val);
+    }
+  });
+  number.addEventListener('change',()=>{
+    let v=Number(number.value);
+    if(number.value===''||!Number.isFinite(v))v=S[key];
+    v=Math.min(Number(number.max),Math.max(Number(number.min),v));
+    number.value=slider.value=v;change(key,v);
+  });
+});
+function ui(){
+  const idx=busy&&state==='idle'?2:({idle:1,ind:3,done:4})[state];
+  [...$('#steps').children].forEach((node,i)=>node.className=i+1<idx?'done':i+1===idx?'on':'');
+  $('#main').textContent={idle:'BTB 용액 3방울 넣기',ind:'용액 혼합하기',done:'다시 실험하기'}[state];
+  $('#main').disabled=busy;
+  $('#again').hidden=state==='idle'||busy||state==='done';
+  ['cs','cn','vs','vn','s0','s1','s3'].forEach(id=>$('#'+id).disabled=busy);
+}
+function resetExp(){
+  state='idle';busy=false;last=null;
+  $('#gB').style.transform='';$('#stream').style.opacity=0;
+  lv($('#liqA'),.62,.3);$('#chips').replaceChildren();$('#liqA').style.fill='';
+  $('#dr').style.cssText='opacity:0;transition:none';
+  setObservation('용액은 모두 무색입니다. 먼저 BTB 용액 3방울을 떨어뜨려 보세요.');
+  drawB();ui();
+}
+async function drop(){
+  busy=true;ui();const d=$('#dr');
+  setObservation('BTB 용액 3방울을 넣는 중입니다.');
+  for(let j=0;j<3;j++){
+    d.style.cssText='opacity:1;transition:none;transform:none';void d.getBoundingClientRect();
+    d.style.cssText='opacity:1;transition:transform .9s ease-in,opacity .3s;transform:translateY(112px)';
+    await sleep(950);d.style.opacity=0;await sleep(300);
+  }
+  $('#liqA').style.fill=BTB['파란색'];await sleep(700);
+  setObservation('BTB를 넣은 NaOH 수용액이 파랗게 변했습니다. 이제 HNO₃ 수용액을 혼합해 보세요.');
+  state='ind';busy=false;ui();
+}
+async function mix(){
+  if(busy)return;
+  busy=true;ui();
+  last=Model.run(STG,S.pct,S.vol);
+  $('#gB').style.transform='translate(-230px,-65px) rotate(-38deg)';await sleep(1300);
+  $('#stream').style.opacity=1;
+  lv($('#liqB'),0,3.2);lv($('#liqA'),Math.min(.96,.62+S.vol/1200),3.2);
+  await sleep(950);
+  $('#liqA').style.fill=BTB[last.color];
+  await sleep(2250);
+  $('#stream').style.opacity=0;$('#gB').style.transform='';await sleep(1300);
+  $('#chips').innerHTML='<span class="chip on">BTB 용액 색: '+last.color+'</span>';
+  setObservation(last.color==='초록색'?'최종 용액이 초록색입니다. 이 색만으로 반응물이 정확히 같은 몰수였다고 단정할 수 있을까요?':
+    last.color==='파란색'?'최종 용액이 파란색입니다. 어떤 반응물이 상대적으로 많이 남았을지 생각해 보세요.':
+    '최종 용액이 노란색입니다. 어떤 반응물이 상대적으로 많이 남았을지 생각해 보세요.');
+  const id=String(Date.now())+'-'+Math.random().toString(36).slice(2,7);
+  const next=stageRecords().reduce((m,r)=>Math.max(m,Number(r.n)||0),0)+1;
+  records.push({id,g:STG,n:next,c:S.pct,v:S.vol,col:last.color});
+  saveRec();renderRec();
+  state='done';busy=false;ui();
+  if(location.hash==='#teacher')renderTeacher();
+}
+function saveRec(){try{localStorage.setItem('neutralLabV2',JSON.stringify(records))}catch(e){}}
+function renderRec(){
+  const list=stageRecords(),tbody=$('#rec');tbody.replaceChildren();
+  $('#hc').textContent=STG===3?'HNO₃ 몰농도(M)':'HNO₃ 농도(%)';
+  if(!list.length){const row=tbody.insertRow();const cell=row.insertCell();cell.colSpan=6;cell.textContent='아직 기록이 없습니다';cell.style.color='var(--mute)';}
+  list.forEach((r,i)=>{
+    const row=tbody.insertRow();if(i===list.length-1)row.className='last';
+    const pickCell=row.insertCell();const pick=document.createElement('input');pick.type='checkbox';pick.className='pick';pick.checked=selected.includes(r.id);pick.setAttribute('aria-label',r.n+'번 실험 비교 선택');
+    pick.addEventListener('change',()=>{if(pick.checked){selected=[...selected.filter(x=>x!==r.id),r.id].slice(-2)}else{selected=selected.filter(x=>x!==r.id)}renderRec();});
+    pickCell.append(pick);
+    for(const value of [r.n,r.c,r.v,r.col])row.insertCell().textContent=value;
+    const deleteCell=row.insertCell(),del=document.createElement('button');del.className='delete';del.textContent='삭제';del.setAttribute('aria-label',r.n+'번 실험 삭제');
+    del.addEventListener('click',()=>{records=records.filter(x=>x.id!==r.id);selected=selected.filter(x=>x!==r.id);saveRec();renderRec();});
+    deleteCell.append(del);
+  });renderCompare();
+}
+function renderCompare(){
+  const root=$('#compareContent');root.replaceChildren();
+  const chosen=selected.map(id=>records.find(r=>r.id===id)).filter(r=>r&&r.g===STG);
+  chosen.forEach(r=>{
+    const card=document.createElement('div');card.className='compare-item';
+    const h=document.createElement('strong');h.textContent=`${r.n}번 실험`;
+    const c=document.createElement('p');c.textContent=`HNO₃: ${r.c}${STG===3?' M':' %'} · ${r.v} mL`;
+    const b=document.createElement('p');b.className='comp-result';b.textContent='관찰 결과: '+r.col;
+    card.append(h,c,b);root.append(card);
+  });
+  if(chosen.length===2){const msg=document.createElement('p');msg.className='tiny';msg.style.gridColumn='1/-1';msg.textContent=chosen[0].col===chosen[1].col?'두 실험의 BTB 색이 같습니다. 투입 조건도 같은지 비교해 보세요.':'두 실험의 BTB 색이 다릅니다. 달라진 투입 조건을 설명해 보세요.';root.append(msg);}
+}
+$('#main').onclick=()=>({idle:drop,ind:mix,done:resetExp})[state]();
+$('#quick').onchange=e=>document.body.classList.toggle('q',e.target.checked);
+$('#again').onclick=resetExp;
+let confirmDelete=false;
+$('#clr').onclick=()=>{
+  if(!stageRecords().length)return;
+  if(!confirmDelete){confirmDelete=true;$('#clr').textContent='삭제 확인 (한 번 더 클릭)';return;}
+  records=records.filter(r=>r.g!==STG);selected=[];confirmDelete=false;
+  $('#clr').textContent='현재 단계 기록 초기화';saveRec();renderRec();
+};
+$('#csv').onclick=()=>{
+  const lines=[['실험 번호',STG===3?'HNO₃ 몰농도(M)':'HNO₃ 농도(%)','HNO₃ 부피(mL)','BTB 용액 색'],...stageRecords().map(r=>[r.n,r.c,r.v,r.col])];
+  const esc=v=>'"'+String(v).replaceAll('"','""')+'"';
+  const data='\ufeff'+lines.map(line=>line.map(esc).join(',')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([data],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=`중화반응_${STG+1}단계.csv`;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+function setStage(g){
+  if(busy)return;
+  STG=g;S.pct=g===3?.5:10;S.vol=100;selected=[];confirmDelete=false;$('#clr').textContent='현재 단계 기록 초기화';
+  for(const el of [$('#cs'),$('#cn')]){el.min=g===3?.05:1;el.max=g===3?2:30;el.step=g===3?.05:.1;el.value=S.pct;}
+  for(const el of [$('#vs'),$('#vn')]){el.min=0;el.max=300;el.step=1;el.value=100;}
+  $('#cctl').style.display=g===3?'':'none';
+  $('#vctl').style.display=g===0?'none':'';
+  $('#fb').style.display=g===3?'none':'';
+  $('#fb').textContent='🔒 질량 백분율 농도 10 %'+(g===0?' · 부피 100 mL':'')+(g===0?' (변경 불가)':' (농도 변경 불가)');
+  $('#def').style.display=g===3?'block':'none';
+  $('#clab').textContent=g===3?'HNO₃ 몰농도 (mol/L)':'HNO₃ 질량 백분율 농도 (%)';
+  $('#fa').innerHTML='🔒 <b>비커 A</b> · NaOH 수용액<br>'+(g===3?'몰농도 0.50 M':'질량 백분율 농도 10 %')+' · 부피 100 mL (변경 불가)';
+  $('#lblA').textContent=g===3?'0.50 M · 100 mL':'10 % · 100 mL';
+  $('#goal').textContent=g===0?'탐구 질문: 두 용액의 농도(%)와 부피가 같으면 반드시 중화될까요?':g===1?'탐구 질문: HNO₃의 질량 백분율 농도를 10%로 고정하고, 부피만 바꿔 BTB가 초록색이 되는 조건을 찾아보세요.':'탐구 질문: 같은 몰농도·부피와 반응하는 몰수 사이에는 어떤 관계가 있을까요?';
+  $('#s0').className=g===0?'':'ghost';$('#s1').className=g===1?'':'ghost';$('#s3').className=g===3?'':'ghost';
+  resetExp();renderRec();renderTeacher();
+}
+function runTests(){
+  const cases=[
+    ['1단계, 같은 질량%와 같은 부피에서도 파란색',()=>Model.run(0,10,100).color==='파란색'],
+    ['산이 과량이면 노란색',()=>Model.run(1,30,300).color==='노란색'],
+    ['몰농도 0.50 M 산·염기 100 mL → 초록색',()=>Model.run(3,.5,100).color==='초록색'],
+    ['같은 몰수: 1.0 M × 50 mL → 초록색',()=>Model.run(3,1,50).color==='초록색'],
+    ['같은 몰수: 0.25 M × 200 mL → 초록색',()=>Model.run(3,.25,200).color==='초록색'],
+    ['0 mL 산 첨가 → 파란색',()=>Model.run(3,2,0).color==='파란색'],
+    ['산량 증가에 따라 pH가 감소',()=>[20,40,60,80,100,120].map(v=>Model.run(3,.5,v).pH).every((p,i,a)=>i===0||a[i-1]>=p)],
+    ['모든 조합에서 유한한 pH 반환',()=>[0,1,3].every(g=>[0,10,100,300].every(v=>Number.isFinite(Model.run(g,g===3?.5:10,v).pH)))]
+  ];
+  return cases.map(([name,fn])=>{try{return[name,Boolean(fn())]}catch(e){return[name,false]}});
+}
+function renderTeacher(){
+  const panel=$('#teacherDetail');if(location.hash!=='#teacher')return;
+  const r=last;
+  panel.textContent=r?`마지막 실험: NaOH ${fixed(r.baseMol,5)} mol, HNO₃ ${fixed(r.acidMol,5)} mol, 계산 pH ${fixed(r.pH,3)}, BTB ${r.color}`:'실험 후 내부 계산값을 확인할 수 있습니다.';
+}
+if(location.hash==='#teacher'){
+  $('#teacher').style.display='block';
+  $('#runT').onclick=()=>{$('#tout').replaceChildren();for(const [name,ok] of runTests()){const li=document.createElement('li');li.textContent=(ok?'✅ ':'❌ ')+name;$('#tout').append(li)}};
+}
+$('#s0').onclick=()=>setStage(0);$('#s1').onclick=()=>setStage(1);$('#s3').onclick=()=>setStage(3);
+setStage(0);
+</script>
+</body>
+</html>
